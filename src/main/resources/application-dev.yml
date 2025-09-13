@@ -1,0 +1,22 @@
+# Development environment configuration
+server:
+  port: 8080
+  ssl:
+    enabled: false
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/repairshop_dev
+
+# Development WhatsApp settings (webhook testing)
+whatsapp:
+  webhook:
+    verify:
+      token: dev_webhook_token_123
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    com.repairo: DEBUG

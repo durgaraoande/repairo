@@ -1,0 +1,37 @@
+# Production environment configuration
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEY_STORE}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: PKCS12
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+  thymeleaf:
+    cache: true
+
+# Production encryption
+app:
+  encryption:
+    key: ${ENCRYPTION_KEY}
+
+# Production WhatsApp settings
+whatsapp:
+  access:
+    token: ${WHATSAPP_ACCESS_TOKEN}
+  phone:
+    number:
+      id: ${WHATSAPP_PHONE_NUMBER_ID}
+  webhook:
+    verify:
+      token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+
+logging:
+  level:
+    root: WARN
+    com.repairo: INFO
+    org.springframework.security: WARN

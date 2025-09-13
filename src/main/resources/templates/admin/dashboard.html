@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repairo - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-mobile-alt me-2"></i>Repairo Admin
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div class="list-group">
+                    <a href="/admin/dashboard" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="/admin/customers" class="list-group-item list-group-item-action">
+                        <i class="fas fa-users me-2"></i>Customers
+                    </a>
+                    <a href="/admin/messages" class="list-group-item list-group-item-action">
+                        <i class="fas fa-comments me-2"></i>Messages
+                    </a>
+                    <a href="/admin/repairs" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tools me-2"></i>Repairs
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Dashboard -->
+            <div class="col-md-9 col-lg-10">
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 class="card-title" th:text="${totalCustomers ?: 0}">0</h4>
+                                        <p class="card-text">Total Customers</p>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-users fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 class="card-title" th:text="${activeRepairs ?: 0}">0</h4>
+                                        <p class="card-text">Active Repairs</p>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-tools fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 class="card-title" th:text="${pendingMessages ?: 0}">0</h4>
+                                        <p class="card-text">Pending Messages</p>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-envelope fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 class="card-title" th:text="${completedToday ?: 0}">0</h4>
+                                        <p class="card-text">Completed Today</p>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock me-2"></i>Recent Customers
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Phone Model</th>
+                                        <th>Status</th>
+                                        <th>Last Interaction</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentCustomers)}">
+                                        <td colspan="5" class="text-center text-muted">
+                                            No recent customers. WhatsApp integration ready for messages!
+                                        </td>
+                                    </tr>
+                                    <tr th:each="customer : ${recentCustomers}">
+                                        <td th:text="${customer.name ?: 'Unknown'}">Unknown</td>
+                                        <td th:text="${customer.phoneModel ?: 'N/A'}">N/A</td>
+                                        <td>
+                                            <span class="badge bg-secondary" th:text="${customer.repairStatus}" 
+                                                  th:classappend="${customer.repairStatus == T(com.repairo.model.RepairStatus).COMPLETED} ? 'bg-success' : 
+                                                                 (${customer.repairStatus == T(com.repairo.model.RepairStatus).IN_PROGRESS} ? 'bg-warning' : 'bg-secondary')}">
+                                            </span>
+                                        </td>
+                                        <td th:text="${#temporals.format(customer.lastInteraction, 'yyyy-MM-dd HH:mm')}">Recently</td>
+                                        <td>
+                                            <a th:href="@{/admin/customers(search=${customer.name})}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

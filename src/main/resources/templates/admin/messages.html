@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Repairo Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-mobile-alt me-2"></i>Repairo Admin
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div class="list-group">
+                    <a href="/admin/dashboard" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="/admin/customers" class="list-group-item list-group-item-action">
+                        <i class="fas fa-users me-2"></i>Customers
+                    </a>
+                    <a href="/admin/messages" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-comments me-2"></i>Messages
+                    </a>
+                    <a href="/admin/repairs" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tools me-2"></i>Repairs
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <h2><i class="fas fa-comments me-2"></i>Customer Messages</h2>
+                
+                <div th:if="${#lists.isEmpty(customers)}" class="text-center mt-5">
+                    <i class="fas fa-comments fa-4x text-muted mb-4"></i>
+                    <h4 class="text-muted">No pending messages</h4>
+                    <p class="text-muted">Messages from customers will appear here when they contact via WhatsApp.</p>
+                </div>
+
+                <div th:each="customer : ${customers}" class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0" th:text="${customer.name ?: 'Unknown Customer'}">Unknown Customer</h5>
+                            <small class="text-muted" th:text="${customer.phoneModel}">Phone Model</small>
+                        </div>
+                        <span class="badge bg-warning">Pending Reply</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="message-thread" style="max-height: 300px; overflow-y: auto;">
+                            <div th:each="message : ${customer.messages}" 
+                                 th:class="${message.from == 'customer'} ? 'message-customer mb-2' : 'message-admin mb-2'">
+                                <div th:if="${message.from == 'customer'}" class="d-flex">
+                                    <div class="bg-light p-2 rounded me-auto" style="max-width: 70%;">
+                                        <small class="text-primary"><i class="fas fa-user me-1"></i>Customer</small>
+                                        <p class="mb-1" th:text="${message.text}">Message text</p>
+                                        <small class="text-muted" th:text="${#temporals.format(message.timestamp, 'HH:mm')}">12:34</small>
+                                    </div>
+                                </div>
+                                <div th:if="${message.from == 'admin'}" class="d-flex">
+                                    <div class="bg-primary text-white p-2 rounded ms-auto" style="max-width: 70%;">
+                                        <small><i class="fas fa-user-tie me-1"></i>Admin</small>
+                                        <p class="mb-1" th:text="${message.text}">Message text</p>
+                                        <small th:text="${#temporals.format(message.timestamp, 'HH:mm')}">12:34</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Reply Form -->
+                        <div class="mt-3">
+                            <form th:onsubmit="'sendReply(\'' + ${customer.customerId} + '\', event); return false;'">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Type your reply..." 
+                                           th:id="'replyInput-' + ${customer.customerId}">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i>Send
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function sendReply(customerId, event) {
+            event.preventDefault();
+            const input = document.getElementById('replyInput-' + customerId);
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            fetch('/admin/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `customerId=${customerId}&message=${encodeURIComponent(message)}`
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data === 'success') {
+                    input.value = '';
+                    location.reload(); // Refresh to show updated messages
+                } else {
+                    alert('Failed to send message');
+                }
+            })
+            .catch(error => {
+                alert('Error sending message');
+            });
+        }
+    </script>
+</body>
+</html>

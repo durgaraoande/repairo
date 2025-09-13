@@ -1,0 +1,84 @@
+spring:
+  profiles:
+    active: dev
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/repairshop
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+server:
+  port: 8080
+
+# App-specific configuration
+app:
+  encryption:
+    key: ${ENCRYPTION_KEY:defaultDevKey1234567890}
+
+# WhatsApp Configuration
+whatsapp:
+  access:
+    token: ${WHATSAPP_ACCESS_TOKEN:}
+  phone:
+    number:
+      id: ${WHATSAPP_PHONE_NUMBER_ID:}
+  api:
+    url: https://graph.facebook.com/v18.0
+  webhook:
+    verify:
+      token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:repairo_webhook_token}
+
+# Logging
+logging:
+  level:
+    org.springframework.security: INFO
+    com.repairo: DEBUG
+    root: INFO
+
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/repairshop_dev
+
+server:
+  port: 8080
+  ssl:
+    enabled: false
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.repairo: DEBUG
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/repairshop_prod}
+  thymeleaf:
+    cache: true
+
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEY_STORE:}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD:}
+    key-store-type: PKCS12
+
+logging:
+  level:
+    org.springframework.security: WARN
+    com.repairo: INFO
+    root: WARN

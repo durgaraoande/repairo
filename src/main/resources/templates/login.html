@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repairo - Admin Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="col-md-4">
+            <div class="login-card p-5">
+                <div class="text-center mb-4">
+                    <h2 class="text-primary">📱 Repairo</h2>
+                    <p class="text-muted">Admin Dashboard Login</p>
+                </div>
+                
+                <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                    Invalid username or password.
+                </div>
+                
+                <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                    You have been logged out successfully.
+                </div>
+                
+                <form th:action="@{/login}" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required 
+                               placeholder="Default: admin">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required 
+                               placeholder="Default: admin">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+                    
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Default credentials: <strong>admin / admin</strong>
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

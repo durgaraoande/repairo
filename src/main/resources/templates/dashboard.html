@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Repair Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="customer : ${customers}">
+                <td th:text="${customer.name}"></td>
+                <td th:text="${customer.phone}"></td>
+                <td th:text="${customer.repairStatus}"></td>
+                <td>
+                    <a th:href="@{/admin/conversation/{id}(id=${customer.customerId})}">View</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
