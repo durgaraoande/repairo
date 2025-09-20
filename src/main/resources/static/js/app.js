@@ -185,9 +185,11 @@
     function init() {
       const root = qs('[data-page="dashboard"]');
       if (!root) return;
+      const intervalMeta = qs('meta[name="poll.dashboard.interval"]');
+      const dashInterval = intervalMeta ? parseInt(intervalMeta.content,10) : 10000;
       polling = new Poller({
         url: `/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`,
-        interval: 10000,
+        interval: dashInterval,
         onData: handleData,
         onError: () => {}
       });
@@ -274,12 +276,33 @@
       }
     }
     function startPoller() {
+      // After first full load we may switch to diff mode (lighter payload) based on feature flag
+      const diffFeatureMeta = qs('meta[name="feature.diffPolling"]');
+      let useDiff = diffFeatureMeta ? (diffFeatureMeta.content === 'true') : true;
+      const intervalMeta = qs('meta[name="poll.messages.interval"]');
+      const maxIntervalMeta = qs('meta[name="poll.messages.maxInterval"]');
+      const baseInterval = intervalMeta ? parseInt(intervalMeta.content,10) : 4000;
+      const maxInterval = maxIntervalMeta ? parseInt(maxIntervalMeta.content,10) : 30000;
       messagesPoller = new Poller({
-        url: () => `/admin/check-new-messages?lastChecked=${encodeURIComponent(state.lastChecked)}`,
-        interval: 4000,
+        url: () => {
+          const base = useDiff
+            ? `/admin/check-new-messages?diff=true&lastChecked=${encodeURIComponent(state.lastChecked)}`
+            : `/admin/check-new-messages?lastChecked=${encodeURIComponent(state.lastChecked)}`;
+          return base;
+        },
+        interval: baseInterval,
         backoff: true,
-        maxInterval: 30000,
-        onData: handlePollData,
+        maxInterval: maxInterval,
+        onData: (data) => {
+          // Detect if we are still in full mode and can transition
+            const payload = data && data.data ? data.data : data;
+            const wasFull = !useDiff && diffFeatureMeta && diffFeatureMeta.content === 'true';
+            handlePollData(data, false, {diffMode: useDiff});
+            if (wasFull) {
+              // After first successful full response, shift to diff mode
+              useDiff = true;
+            }
+        },
         onError: () => {},
         autoStart: true
       });
@@ -292,7 +315,7 @@
         .catch(err => { if (!silent) console.error(err); });
     }
 
-    function handlePollData(resp, silent=false) {
+    function handlePollData(resp, silent=false, { diffMode=false } = {}) {
       const data = resp && resp.data ? resp.data : resp;
       if (!data) return;
       if (data.timestamp) state.lastChecked = data.timestamp;
@@ -307,29 +330,40 @@
             listChanged = true;
           } else {
             const existing = state.customers[idx];
-            // Detect new messages by length difference (server returns ordered, complete history)
-            const oldLen = (existing.messages || []).length;
-            const newLen = (incoming.messages || []).length;
-            if (newLen > oldLen) {
-              const newMessages = incoming.messages.slice(oldLen);
-              // Update stored messages
-              existing.messages = existing.messages ? existing.messages.concat(newMessages) : incoming.messages;
-              // If this is the currently open chat, append only new messages to DOM
+            if (diffMode && incoming.messageCount !== undefined && incoming.lastMessageTime) {
+              // Diff shape (no messages). If messageCount increased for current chat, trigger a focused fetch.
               if (existing.customerId === state.currentCustomerId) {
-                appendMessages(existing, newMessages);
+                const currentCount = (existing.messages || []).length;
+                if (incoming.messageCount > currentCount) {
+                  // Fetch full messages for this single customer (fallback: full refresh call)
+                  fetchFullMessagesForCustomer(existing.customerId);
+                }
               }
-              listChanged = true; // last preview + time changed
-            } else if (newLen < oldLen) {
-              // Fallback: server trimmed or reset (rare) -> replace & full re-render if active
-              existing.messages = incoming.messages;
-              if (existing.customerId === state.currentCustomerId) {
-                renderMessages(existing, { force:true });
-              }
+              // Update meta fields
+              existing.repairStatus = incoming.repairStatus || existing.repairStatus;
+              existing.lastInteraction = incoming.lastInteraction || existing.lastInteraction;
               listChanged = true;
-            } else {
-              // same length, but we might want to carry over any metadata updates (e.g., name/phone changes)
-              existing.name = incoming.name;
-              existing.phone = incoming.phone;
+            } else if (!diffMode) {
+              // Full payload path (with messages present)
+              const oldLen = (existing.messages || []).length;
+              const newLen = (incoming.messages || []).length;
+              if (newLen > oldLen) {
+                const newMessages = incoming.messages.slice(oldLen);
+                existing.messages = existing.messages ? existing.messages.concat(newMessages) : incoming.messages;
+                if (existing.customerId === state.currentCustomerId) {
+                  appendMessages(existing, newMessages);
+                }
+                listChanged = true;
+              } else if (newLen < oldLen) {
+                existing.messages = incoming.messages;
+                if (existing.customerId === state.currentCustomerId) {
+                  renderMessages(existing, { force:true });
+                }
+                listChanged = true;
+              } else {
+                existing.name = incoming.name;
+                existing.phone = incoming.phone;
+              }
             }
           }
         });
@@ -350,6 +384,27 @@
             }
         }
       }
+    }
+
+    async function fetchFullMessagesForCustomer(customerId) {
+      try {
+        // Leverage existing endpoint without diff to get fresh full payload for one customer (filter client-side)
+        const resp = await fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(state.lastChecked)}`);
+        const json = await resp.json();
+        const data = json && json.data ? json.data : json;
+        if (data && data.customers) {
+          const fresh = data.customers.find(c => c.customerId === customerId);
+          if (fresh) {
+            const idx = state.customers.findIndex(c => c.customerId === customerId);
+            if (idx >= 0) {
+              state.customers[idx].messages = fresh.messages || [];
+              if (state.currentCustomerId === customerId) {
+                renderMessages(state.customers[idx], { force:true });
+              }
+            }
+          }
+        }
+      } catch(e){ /* ignore */ }
     }
 
     function refreshCustomerList() {

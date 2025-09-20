@@ -26,6 +26,46 @@ app:
       username: ${ADMIN_USERNAME:admin}
       password: ${ADMIN_PASSWORD:admin}
       enabled: true
+  websocket:
+    enabled: true
+    allowed-origins: "*" # CHANGE IN PROD to your domains e.g. https://admin.example.com,https://app.example.com
+    heartbeat:
+      inbound-ms: 10000
+      outbound-ms: 10000
+  rate-limit:
+    enabled: true
+    policies:
+      check-messages:
+        capacity: 60        # 60 requests
+        diff-capacity: 120  # allow more frequent small diff polls
+        periodMs: 60000     # per minute
+        perIp: true
+        paths:
+          - /admin/check-new-messages
+      send-message:
+        capacity: 120
+        periodMs: 60000
+        perIp: true
+        paths:
+          - /admin/send-message
+      update-status:
+        capacity: 90
+        periodMs: 60000
+        perIp: true
+        paths:
+          - /admin/update-status
+  features:
+    websockets: true
+    diff-polling-default-enabled: true
+    strict-json: false
+    audit-status: true
+  polling:
+    messages:
+      interval-ms: 4000
+      max-interval-ms: 30000
+    dashboard:
+      interval-ms: 10000
+
     # Alternative: load users from database
     # users:
     #   source: database # or properties
@@ -50,8 +90,8 @@ whatsapp:
 # Logging
 logging:
   level:
-    org.springframework.security: INFO
-    com.repairo: DEBUG
+    "org.springframework.security": INFO
+    "com.repairo": DEBUG
     root: INFO
 
 ---
@@ -80,8 +120,8 @@ server:
 
 logging:
   level:
-    org.springframework.security: DEBUG
-    com.repairo: DEBUG
+    "org.springframework.security": DEBUG
+    "com.repairo": DEBUG
 
 ---
 # Production Profile
@@ -105,6 +145,6 @@ server:
 
 logging:
   level:
-    org.springframework.security: WARN
-    com.repairo: INFO
+    "org.springframework.security": WARN
+    "com.repairo": INFO
     root: WARN

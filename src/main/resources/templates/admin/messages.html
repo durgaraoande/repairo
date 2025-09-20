@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="/css/app.css" />
   <meta name="_csrf" th:content="${_csrf.token}"/>
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <meta name="poll.messages.interval" th:content="${@pollingProperties.messages.intervalMs}" />
+  <meta name="poll.messages.maxInterval" th:content="${@pollingProperties.messages.maxIntervalMs}" />
+  <meta name="feature.diffPolling" th:content="${@featureProperties.diffPollingDefaultEnabled}" />
 </head>
 <body data-page="messages">
   <nav class="navbar navbar-expand-lg navbar-dark">

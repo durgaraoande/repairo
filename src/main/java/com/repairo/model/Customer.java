@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.index.Indexed;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +20,10 @@ public class Customer implements Persistable<String> {
     // Plaintext fields for filtering and display
     private String name;
     private String phoneModel;
+    @Indexed
     private RepairStatus repairStatus;
     private OnboardingState onboardingState;
+    @Indexed
     private LocalDateTime lastInteraction;
     
     // Encrypted fields (sensitive data)

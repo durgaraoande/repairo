@@ -7,6 +7,7 @@ import com.repairo.model.Message;
 import com.repairo.model.RepairStatus;
 import com.repairo.model.RepairStatusChange;
 import com.repairo.repository.CustomerRepository;
+import com.repairo.config.FeatureProperties;
 import com.repairo.repository.RepairStatusChangeRepository;
 import com.repairo.service.MessageService;
 import org.slf4j.Logger;
@@ -54,6 +55,9 @@ public class AdminController {
 
     @Autowired(required = false)
     private com.repairo.service.WebSocketEventPublisher webSocketEventPublisher;
+
+    @Autowired(required = false)
+    private FeatureProperties featureProperties;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -235,15 +239,17 @@ public class AdminController {
             
             // Record status change in audit log
             String username = authentication != null ? authentication.getName() : "system";
-            RepairStatusChange statusChange = new RepairStatusChange(
-                request.getCustomerId(), oldStatus, request.getStatus(), username
-            );
-            repairStatusChangeRepository.save(statusChange);
-            
+            if (featureProperties == null || featureProperties.isAuditStatus()) {
+                RepairStatusChange statusChange = new RepairStatusChange(
+                    request.getCustomerId(), oldStatus, request.getStatus(), username
+                );
+                repairStatusChangeRepository.save(statusChange);
+            }
+
             logger.info("Status updated for customer {} from {} to {} by {}", 
                        request.getCustomerId(), oldStatus, request.getStatus(), username);
             
-            if (webSocketEventPublisher != null) {
+            if ((featureProperties == null || featureProperties.isWebsockets()) && webSocketEventPublisher != null) {
                 webSocketEventPublisher.publishStatusChange(request.getCustomerId(), oldStatus.name(), request.getStatus().name());
             }
             return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
@@ -259,7 +265,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse<String>> sendMessage(@Valid @RequestBody SendMessageRequest request) {
         try {
             messageService.sendReplyMessage(request.getCustomerId(), request.getMessage());
-            if (webSocketEventPublisher != null) {
+            if ((featureProperties == null || featureProperties.isWebsockets()) && webSocketEventPublisher != null) {
                 String preview = request.getMessage();
                 if (preview.length() > 40) preview = preview.substring(0, 40) + "...";
                 webSocketEventPublisher.publishNewMessage(request.getCustomerId(), preview);
@@ -404,41 +410,4 @@ public class AdminController {
         }
     }
 
-    /**
-     * Simple DB health & diagnostics endpoint (non-production) to help investigate Mongo errors.
-     * Returns counts and a lightweight sample (customerId + status only) so that we can confirm
-     * connectivity vs. serialization / encryption issues.
-     */
-    @GetMapping(value = "/db-health", produces = "application/json")
-    @ResponseBody
-    public ResponseEntity<ApiResponse<?>> dbHealth() {
-        try {
-            long total = customerRepository.count();
-            long pending = customerRepository.countByRepairStatus(RepairStatus.PENDING);
-            long inProgress = customerRepository.countByRepairStatus(RepairStatus.IN_PROGRESS);
-            long completed = customerRepository.countByRepairStatus(RepairStatus.COMPLETED);
-
-            List<Customer> sample = customerRepository.findAll().stream().limit(3).toList();
-
-            // Minimal projection DTO (local record) to avoid serialization of encrypted fields
-            record SampleCustomer(String customerId, RepairStatus repairStatus, Long version) {}
-            List<SampleCustomer> sampleView = new ArrayList<>();
-            for (Customer c : sample) {
-                sampleView.add(new SampleCustomer(c.getCustomerId(), c.getRepairStatus(), c.getVersion()));
-            }
-
-            var payload = new java.util.LinkedHashMap<String, Object>();
-            payload.put("ok", true);
-            payload.put("totalCustomers", total);
-            payload.put("pending", pending);
-            payload.put("inProgress", inProgress);
-            payload.put("completed", completed);
-            payload.put("sample", sampleView);
-            payload.put("timestamp", java.time.Instant.now().toString());
-            return ResponseEntity.ok(ApiResponse.success(payload));
-        } catch (Exception ex) {
-            logger.error("DB health check failed", ex);
-            return ResponseEntity.internalServerError().body(ApiResponse.error("DB error: " + ex.getClass().getSimpleName() + " - " + ex.getMessage()));
-        }
-    }
 }
