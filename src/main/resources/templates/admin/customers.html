@@ -1,742 +1,176 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-page="customers">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Customers - Repairo Admin</title>
-
-    <!-- Core Vendor CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
-    <!-- CSRF Meta -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-
-    <!-- Unified Theme Styles -->
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-accent: #6366f1;
-            --primary-dark: #3730a3;
-            --bg-body: #f5f7fa;
-            --bg-surface: #ffffff;
-            --bg-soft: #f1f4f9;
-            --bg-alt: #eef3f9;
-            --text-main: #1f2937;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --border-strong: #d0d7e2;
-            --success: #10b981;
-            --warn: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --radius-xs: 4px;
-            --radius-sm: 6px;
-            --radius-md: 10px;
-            --radius-lg: 14px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.02);
-            --shadow: 0 2px 6px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
-            --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.15), 0 2px 6px -2px rgba(0,0,0,.08);
-            --focus-ring: 0 0 0 3px rgba(99,102,241,.45);
-            --gradient-header: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
-            --gradient-muted: linear-gradient(135deg,#f9fafb 0%,#f1f5f9 100%);
-            --transition: 140ms cubic-bezier(.4,0,.2,1);
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-body: #0f172a;
-                --bg-surface: #1e293b;
-                --bg-soft: #203046;
-                --bg-alt: #1b2a41;
-                --text-main: #f1f5f9;
-                --text-secondary: #94a3b8;
-                --border: #334155;
-                --border-strong: #475569;
-                --gradient-muted: linear-gradient(135deg,#1e293b 0%,#334155 100%);
-                --shadow-sm: 0 1px 2px rgba(0,0,0,.55);
-                --shadow: 0 2px 6px rgba(0,0,0,.5);
-                --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.65);
-            }
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            background: var(--bg-body);
-            color: var(--text-main);
-            font-family: 'Inter', system-ui, sans-serif;
-            font-size: 14px;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Nav */
-        .navbar {
-            background: var(--gradient-header) !important;
-            padding: .75rem 0;
-            border: 0;
-            box-shadow: 0 2px 6px rgba(0,0,0,.15);
-        }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.3rem;
-            display: flex;
-            gap: .6rem;
-            align-items: center;
-            letter-spacing: .5px;
-        }
-        .navbar .nav-link {
-            color: #e2e8f0 !important;
-            font-weight: 500;
-            transition: color var(--transition);
-        }
-        .navbar .nav-link:hover,
-        .navbar .nav-link:focus-visible {
-            color: #fff !important;
-            outline: none;
-        }
-
-        /* Tabs */
-        .nav-tabs-container {
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-tabs {
-            gap: .3rem;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .nav-tabs::-webkit-scrollbar { display: none; }
-        .nav-tabs .nav-link {
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            font-weight: 500;
-            padding: .85rem 1.25rem;
-            position: relative;
-            white-space: nowrap;
-            transition: background var(--transition), color var(--transition);
-        }
-        .nav-tabs .nav-link:hover {
-            background: var(--bg-soft);
-            color: var(--primary);
-        }
-        .nav-tabs .nav-link.active {
-            color: var(--primary);
-        }
-        .nav-tabs .nav-link.active::after,
-        .nav-tabs .nav-link:focus-visible::after {
-            content: "";
-            position: absolute;
-            left: 1rem;
-            right: 1rem;
-            bottom: 4px;
-            height: 3px;
-            background: var(--primary);
-            border-radius: 4px;
-        }
-
-        /* Page Header */
-        .page-header {
-            margin: 1.8rem 0 1.4rem;
-        }
-        .page-title {
-            font-size: clamp(1.35rem,1.05rem + 1.2vw,2rem);
-            font-weight: 700;
-            margin: 0 0 .5rem;
-            letter-spacing: .5px;
-        }
-        .page-subtitle {
-            margin: 0;
-            color: var(--text-secondary);
-            font-size: .92rem;
-        }
-
-        /* Cards */
-        .card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            transition: box-shadow var(--transition), transform var(--transition);
-            overflow: hidden;
-        }
-        .card:hover {
-            box-shadow: var(--shadow-hover);
-        }
-        .card-header {
-            background: var(--gradient-muted);
-            border: 0;
-            padding: 1rem 1.15rem;
-        }
-        .card-title {
-            margin: 0;
-            font-size: 1.05rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: .55rem;
-        }
-
-        /* Search Form */
-        .search-form input[type="search"] {
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            padding: .65rem .75rem;
-            font-size: .85rem;
-            border-radius: var(--radius-md);
-            transition: border-color var(--transition), background var(--transition);
-        }
-        .search-form input[type="search"]:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: var(--focus-ring);
-            background: #fff;
-        }
-        .search-form .btn {
-            font-weight: 600;
-            letter-spacing: .4px;
-        }
-
-        /* Table */
-        .table-responsive {
-            border-top: 1px solid var(--border);
-        }
-        table.table {
-            margin: 0;
-        }
-        table.table thead th {
-            background: var(--bg-soft);
-            font-weight: 600;
-            font-size: .68rem;
-            letter-spacing: .16em;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            padding: .85rem .9rem;
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-        }
-        table.table tbody td {
-            vertical-align: middle;
-            padding: .85rem .9rem;
-            font-size: .8rem;
-            border-color: var(--bg-soft);
-            position: relative;
-        }
-        table.table tbody tr {
-            transition: background var(--transition);
-        }
-        table.table tbody tr:hover {
-            background: var(--bg-soft);
-        }
-        table.table tbody tr.status-updated {
-            animation: highlightRow 2.2s ease;
-        }
-        @keyframes highlightRow {
-            0% { background: rgba(16,185,129,.18); }
-            30% { background: rgba(16,185,129,.12); }
-            60% { background: rgba(16,185,129,.06); }
-            100% { background: transparent; }
-        }
-
-        /* Avatars */
-        .avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            background: var(--primary);
-            color: #fff;
-            font-size: .85rem;
-            letter-spacing: .5px;
-            box-shadow: 0 2px 6px -2px rgba(0,0,0,.35);
-        }
-
-        /* Status select */
-        .form-select.form-select-sm {
-            font-size: .7rem;
-            padding: .3rem .6rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            transition: border-color var(--transition), background var(--transition);
-        }
-        .form-select.form-select-sm:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: var(--focus-ring);
-            background: #fff;
-        }
-
-        /* Badges / Onboarding */
-        .status-badge span {
-            display: inline-block;
-            padding: .35rem .65rem;
-            border-radius: 14px;
-            font-size: .6rem;
-            font-weight: 600;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            line-height: 1;
-            white-space: nowrap;
-        }
-        .status-pending {
-            background: var(--bg-soft);
-            color: var(--text-secondary);
-        }
-        .status-in-progress {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        .status-completed {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        /* Actions */
-        .btn-outline-primary.btn-sm {
-            font-size: .65rem;
-            padding: .4rem .55rem;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            letter-spacing: .5px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .35rem;
-        }
-        .btn-outline-primary.btn-sm:focus-visible {
-            box-shadow: var(--focus-ring);
-        }
-
-        /* Message Modal */
-        .modal-content {
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-        }
-        .modal-header {
-            background: var(--gradient-muted);
-            border-bottom: 1px solid var(--border);
-        }
-        #messageText {
-            font-size: .85rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            transition: border-color var(--transition), background var(--transition);
-        }
-        #messageText:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: var(--focus-ring);
-            background: #fff;
-        }
-
-        /* Empty state */
-        .empty-state {
-            padding: 3.2rem 1rem;
-            text-align: center;
-        }
-        .empty-state i {
-            opacity: .35;
-            color: var(--text-secondary);
-        }
-        .empty-state h5 {
-            margin-top: .85rem;
-            font-weight: 600;
-            margin-bottom: .35rem;
-        }
-        .empty-state p {
-            font-size: .75rem;
-            margin: 0;
-            color: var(--text-secondary);
-        }
-
-        /* Responsive Table -> Cards (small screens) */
-        @media (max-width: 860px) {
-            table.table thead {
-                display: none;
-            }
-            table.table tbody tr {
-                display: block;
-                background: var(--bg-surface);
-                margin: 0 0 .9rem;
-                border: 1px solid var(--border);
-                border-radius: var(--radius-lg);
-                box-shadow: var(--shadow-sm);
-                padding: .65rem .75rem;
-            }
-            table.table tbody td {
-                display: flex;
-                padding: .45rem 0;
-                border: none;
-                font-size: .75rem;
-            }
-            table.table tbody td::before {
-                content: attr(data-label);
-                flex: 0 0 110px;
-                font-weight: 600;
-                color: var(--text-secondary);
-                text-transform: uppercase;
-                letter-spacing: .08em;
-                font-size: .58rem;
-            }
-            .table-responsive {
-                border: 0;
-            }
-        }
-
-        /* Focus / Accessibility */
-        a:focus-visible,
-        button:focus-visible,
-        select:focus-visible {
-            outline: none;
-            box-shadow: var(--focus-ring);
-        }
-
-        /* Reduced Motion */
-        @media (prefers-reduced-motion: reduce) {
-            .card,
-            .nav-link,
-            .btn,
-            tr,
-            .form-select,
-            input {
-                transition: none !important;
-                animation: none !important;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Customers - Repairo Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/app.css" />
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-mobile-alt"></i>
-                <span>Repairo</span>
-            </a>
-            <div class="ms-auto d-flex align-items-center gap-3">
-                <a class="nav-link d-flex align-items-center gap-2" href="/logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Tabs -->
-    <div class="nav-tabs-container">
-        <div class="container-fluid px-4">
-            <ul class="nav nav-tabs flex-nowrap">
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="/admin/customers">
-                        <i class="fas fa-users me-2"></i>Customers
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/messages">
-                        <i class="fas fa-comments me-2"></i>Messages
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/repairs">
-                        <i class="fas fa-tools me-2"></i>Repairs
-                    </a>
-                </li>
-            </ul>
-        </div>
+<body data-page="customers">
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand" href="/admin/dashboard">
+        <i class="fas fa-mobile-alt"></i><span>Repairo</span>
+      </a>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <a class="nav-link d-flex align-items-center gap-2" href="/logout">
+          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </a>
+      </div>
     </div>
+  </nav>
 
-    <!-- Main -->
-    <main class="container-fluid px-4 pb-5">
-        <header class="page-header">
-            <h1 class="page-title">Customer Management</h1>
-            <p class="page-subtitle">Manage customers and update repair status.</p>
-        </header>
+  <div class="nav-tabs-container">
+    <div class="container-fluid px-4">
+      <ul class="nav nav-tabs flex-nowrap">
+        <li class="nav-item"><a class="nav-link" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/admin/customers"><i class="fas fa-users me-2"></i>Customers</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/messages"><i class="fas fa-comments me-2"></i>Messages</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/repairs"><i class="fas fa-tools me-2"></i>Repairs</a></li>
+      </ul>
+    </div>
+  </div>
 
-        <!-- Search -->
-        <section class="card mb-4">
-            <div class="card-body">
-                <form method="get" class="row g-3 align-items-center search-form">
-                    <div class="col-md-10 col-sm-8">
-                        <input type="search" name="search"
-                               placeholder="Search customers by name..."
-                               th:value="${search}" />
-                    </div>
-                    <div class="col-md-2 col-sm-4">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-search me-2"></i>Search
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
+  <main class="container-fluid px-4 pb-5">
+    <header class="page-header">
+      <h1 class="page-title">Customer Management</h1>
+      <p class="page-subtitle">Manage customers, statuses, and communication.</p>
+    </header>
 
-        <!-- Customers Table -->
-        <section class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-users"></i>All Customers
-                </h3>
-            </div>
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Device</th>
-                            <th>Issue</th>
-                            <th>Status</th>
-                            <th>Onboarding</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:if="${#lists.isEmpty(customers)}">
-                            <td colspan="6" class="text-center py-5">
-                                <div class="empty-state">
-                                    <i class="fas fa-users mb-3" style="font-size:3rem;"></i>
-                                    <h5>No Customers</h5>
-                                    <p>They will appear here when messages arrive.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr th:each="customer : ${customers}">
-                            <td data-label="Customer">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="avatar">
-                                        <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-semibold text-truncate" style="max-width:160px;"
-                                             th:text="${customer.name ?: 'Unknown'}">Unknown</div>
-                                        <small class="text-secondary d-block text-truncate" style="max-width:160px;"
-                                               th:text="${customer.phone ?: 'No phone'}">No phone</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td data-label="Device">
-                                <span class="text-secondary"
-                                      th:text="${customer.phoneModel ?: 'Unknown Model'}">Unknown Model</span>
-                            </td>
-                            <td data-label="Issue">
-                                <span class="d-inline-block text-truncate"
-                                      style="max-width:220px;"
-                                      th:text="${customer.issue ?: 'No issue specified'}"
-                                      th:title="${customer.issue}">No issue specified</span>
-                            </td>
-                            <td data-label="Status">
-                                <select class="form-select form-select-sm"
-                                        th:data-customer-id="${customer.customerId}"
-                                        onchange="updateStatus(this)">
-                                    <option th:value="PENDING"
-                                            th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).PENDING}">
-                                        Pending
-                                    </option>
-                                    <option th:value="IN_PROGRESS"
-                                            th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).IN_PROGRESS}">
-                                        In Progress
-                                    </option>
-                                    <option th:value="COMPLETED"
-                                            th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).COMPLETED}">
-                                        Completed
-                                    </option>
-                                </select>
-                            </td>
-                            <td data-label="Onboarding">
-                                <span th:switch="${customer.onboardingState}" class="status-badge">
-                                    <span th:case="'NEW'" class="status-pending">New</span>
-                                    <span th:case="'AWAITING_NAME'" class="status-in-progress">Await Name</span>
-                                    <span th:case="'AWAITING_ISSUE'" class="status-in-progress">Await Issue</span>
-                                    <span th:case="'AWAITING_PHONE_MODEL'" class="status-in-progress">Await Model</span>
-                                    <span th:case="'COMPLETED'" class="status-completed">Completed</span>
-                                    <span th:case="*" class="status-pending">Unknown</span>
-                                </span>
-                            </td>
-                            <td data-label="Actions">
-                                <button class="btn btn-sm btn-outline-primary"
-                                        th:data-customer-id="${customer.customerId}"
-                                        onclick="showMessageModal(this)"
-                                        title="Send Message">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <section class="card mb-4">
+      <div class="card-body">
+        <form method="get" class="row g-3 align-items-center search-form">
+          <div class="col-md-10 col-sm-8">
+            <input type="search" name="search" placeholder="Search customers by name..."
+                   th:value="${search}" aria-label="Search customers"/>
+          </div>
+          <div class="col-md-2 col-sm-4">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-search me-2"></i>Search
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
 
-        <!-- Message Modal -->
-        <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fas fa-paper-plane me-2"></i>Send Message
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <textarea class="form-control" id="messageText" rows="4"
-                                  placeholder="Type message..."></textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary"
-                                data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="sendMessage()">
-                            <i class="fas fa-paper-plane me-2"></i>Send Message
-                        </button>
-                    </div>
+    <section class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-users"></i>All Customers</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table responsive-stack mb-0">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Device</th>
+              <th>Issue</th>
+              <th>Status</th>
+              <th>Onboarding</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody">
+            <tr th:if="${#lists.isEmpty(customers)}">
+              <td colspan="6">
+                <div class="empty-state">
+                  <i class="fas fa-users mb-3" style="font-size:3rem;"></i>
+                  <h5>No Customers</h5>
+                  <p>Will appear as conversations start.</p>
                 </div>
-            </div>
+              </td>
+            </tr>
+            <tr th:each="customer : ${customers}" data-customer-row>
+              <td data-label="Customer">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="avatar-circle">
+                    <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
+                  </div>
+                  <div>
+                    <div data-col="name" class="fw-semibold text-truncate" style="max-width:160px;"
+                         th:text="${customer.name ?: 'Unknown'}">Unknown</div>
+                    <small class="text-secondary d-block text-truncate" style="max-width:160px;"
+                           th:text="${customer.phone ?: 'No phone'}">No phone</small>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Device">
+                <span class="text-secondary" th:text="${customer.phoneModel ?: 'Unknown Model'}">Unknown Model</span>
+              </td>
+              <td data-label="Issue">
+                <span class="d-inline-block text-truncate" style="max-width:220px;"
+                      th:text="${customer.issue ?: 'No issue specified'}"
+                      th:title="${customer.issue}">No issue specified</span>
+              </td>
+              <td data-label="Status">
+                <select class="form-select form-select-sm customer-status-select"
+                        th:data-customer-id="${customer.customerId}">
+                  <option th:value="PENDING"
+                          th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).PENDING}">
+                    Pending
+                  </option>
+                  <option th:value="IN_PROGRESS"
+                          th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).IN_PROGRESS}">
+                    In Progress
+                  </option>
+                  <option th:value="COMPLETED"
+                          th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).COMPLETED}">
+                    Completed
+                  </option>
+                </select>
+              </td>
+              <td data-label="Onboarding">
+                <span th:switch="${customer.onboardingState}" class="status-badge">
+                  <span th:case="'NEW'" class="status-pending">New</span>
+                  <span th:case="'AWAITING_NAME'" class="status-in-progress">Await Name</span>
+                  <span th:case="'AWAITING_ISSUE'" class="status-in-progress">Await Issue</span>
+                  <span th:case="'AWAITING_PHONE_MODEL'" class="status-in-progress">Await Model</span>
+                  <span th:case="'COMPLETED'" class="status-completed">Completed</span>
+                  <span th:case="*" class="status-pending">Unknown</span>
+                </span>
+              </td>
+              <td data-label="Actions">
+                <button class="btn btn-sm btn-outline-primary"
+                        th:data-customer-id="${customer.customerId}"
+                        onclick="showMessageModal(this)"
+                        type="button">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="customersPaginationContainer"></div>
+    </section>
+  </main>
+
+  <!-- Message Modal -->
+  <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-paper-plane me-2"></i>Send Message</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Dismiss"></button>
         </div>
-    </main>
+        <div class="modal-body">
+          <textarea class="form-control" id="messageText" rows="4" placeholder="Type message..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="sendMessage()">
+            <i class="fas fa-paper-plane me-2"></i>Send Message
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- Vendor JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Page Logic (kept functions, added subtle enhancements) -->
-    <script>
-        let currentCustomerId = null;
-
-        function getCsrfToken() {
-            const name = 'XSRF-TOKEN=';
-            const parts = decodeURIComponent(document.cookie).split(';');
-            for (let c of parts) {
-                c = c.trim();
-                if (c.indexOf(name) === 0) return c.substring(name.length);
-            }
-            return '';
-        }
-
-        function updateStatus(selectElement) {
-            const customerId = selectElement.getAttribute('data-customer-id');
-            const status = selectElement.value;
-
-            const row = selectElement.closest('tr');
-            selectElement.disabled = true;
-            const originalBg = row.style.backgroundColor;
-            row.style.backgroundColor = 'rgba(99,102,241,.08)';
-
-            fetch('/admin/update-status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `customerId=${customerId}&status=${status}`
-            })
-            .then(r => r.text())
-            .then(text => {
-                if (text === 'success') {
-                    showAlert('Status updated', 'success');
-                    row.classList.remove('status-updated');
-                    void row.offsetWidth; /* reflow to restart animation */
-                    row.classList.add('status-updated');
-                } else {
-                    showAlert('Status update failed', 'danger');
-                }
-            })
-            .catch(err => {
-                console.error('Error updating status', err);
-                showAlert('Status update error', 'danger');
-            })
-            .finally(() => {
-                selectElement.disabled = false;
-                setTimeout(() => { row.style.backgroundColor = originalBg || ''; }, 600);
-            });
-        }
-
-        function showMessageModal(button) {
-            currentCustomerId = button.getAttribute('data-customer-id');
-            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-            modal.show();
-        }
-
-        function sendMessage() {
-            const textarea = document.getElementById('messageText');
-            const message = textarea.value.trim();
-            const sendBtn = document.querySelector('#messageModal .btn-primary');
-
-            if (!message) {
-                showAlert('Enter a message', 'warning');
-                return;
-            }
-
-            sendBtn.disabled = true;
-            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
-
-            fetch('/admin/send-message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `customerId=${currentCustomerId}&message=${encodeURIComponent(message)}`
-            })
-            .then(r => r.text())
-            .then(text => {
-                if (text === 'success') {
-                    showAlert('Message sent', 'success');
-                    textarea.value = '';
-                    bootstrap.Modal.getInstance(document.getElementById('messageModal')).hide();
-                } else if (text.startsWith('error:')) {
-                    showAlert('Send failed: ' + text.substring(6), 'danger');
-                } else {
-                    showAlert('Send failed', 'danger');
-                }
-            })
-            .catch(err => {
-                console.error('Message send error', err);
-                showAlert('Error sending message', 'danger');
-            })
-            .finally(() => {
-                sendBtn.disabled = false;
-                sendBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send Message';
-            });
-        }
-
-        function showAlert(message, type) {
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'position:fixed;top:20px;right:20px;z-index:1100;max-width:360px;';
-            wrapper.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show shadow-sm mb-2"
-                     style="animation:fadeSlide .35s ease;">
-                    <div class="d-flex align-items-start gap-2">
-                        <span class="flex-grow-1">${message}</span>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                </div>`;
-            document.body.appendChild(wrapper);
-            setTimeout(() => {
-                if (wrapper.isConnected) {
-                    wrapper.style.opacity = '0';
-                    wrapper.style.transform = 'translateY(-6px)';
-                    setTimeout(() => wrapper.remove(), 320);
-                }
-            }, 4200);
-        }
-
-        // Minimal entrance animation for alerts
-        const styleAnim = document.createElement('style');
-        styleAnim.textContent = `
-            @keyframes fadeSlide {
-                from { opacity:0; transform:translateY(-4px); }
-                to { opacity:1; transform:translateY(0); }
-            }
-        `;
-        document.head.appendChild(styleAnim);
-    </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>

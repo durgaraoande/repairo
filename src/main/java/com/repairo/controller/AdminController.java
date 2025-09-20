@@ -59,6 +59,13 @@ public class AdminController {
         // Recent customers
         List<Customer> recentCustomers = customerRepository.findByLastInteractionAfter(
             LocalDateTime.now().minusDays(7));
+        
+        // Decrypt sensitive fields for recent customers
+        recentCustomers.forEach(customer -> {
+            customer.setPhone(encryptionConfig.decryptSensitiveField(customer.getPhone(), "phone"));
+            customer.setIssue(encryptionConfig.decryptSensitiveField(customer.getIssue(), "issue"));
+        });
+        
         model.addAttribute("recentCustomers", recentCustomers);
         
         return "admin/dashboard";
@@ -153,6 +160,13 @@ public class AdminController {
     @GetMapping("/repairs")
     public String repairs(Model model) {
         List<Customer> customers = customerRepository.findAll();
+        
+        // Decrypt sensitive fields for display
+        customers.forEach(customer -> {
+            customer.setPhone(encryptionConfig.decryptSensitiveField(customer.getPhone(), "phone"));
+            customer.setIssue(encryptionConfig.decryptSensitiveField(customer.getIssue(), "issue"));
+        });
+        
         model.addAttribute("customers", customers);
         model.addAttribute("repairStatuses", RepairStatus.values());
         return "admin/repairs";

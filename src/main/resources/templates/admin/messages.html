@@ -1,1008 +1,129 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-page="messages">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Messages - Repairo Admin</title>
-
-    <!-- Core Vendor CSS (retained for existing dependency hooks) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
-    <!-- CSRF (kept for AJAX compatibility) -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-
-    <!-- Unified App Theme / Messages UI -->
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-accent: #6366f1;
-            --primary-dark: #3730a3;
-            --bg-body: #f5f7fa;
-            --bg-surface: #ffffff;
-            --bg-soft: #f1f4f9;
-            --bg-alt: #eef3f9;
-            --text-main: #1f2937;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --border-strong: #d0d7e2;
-            --success: #10b981;
-            --warn: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --radius-xs: 4px;
-            --radius-sm: 6px;
-            --radius-md: 10px;
-            --radius-lg: 14px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.02);
-            --shadow: 0 2px 6px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
-            --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.15), 0 2px 6px -2px rgba(0,0,0,.08);
-            --focus-ring: 0 0 0 3px rgba(99,102,241,.45);
-            --gradient-header: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
-            --gradient-muted: linear-gradient(135deg,#f9fafb 0%,#f1f5f9 100%);
-            --transition: 140ms cubic-bezier(.4,0,.2,1);
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-body: #0f172a;
-                --bg-surface: #1e293b;
-                --bg-soft: #203046;
-                --bg-alt: #1b2a41;
-                --text-main: #f1f5f9;
-                --text-secondary: #94a3b8;
-                --border: #32455b;
-                --border-strong: #44596f;
-                --gradient-muted: linear-gradient(135deg,#1e293b 0%,#334155 100%);
-                --shadow-sm: 0 1px 2px rgba(0,0,0,.5);
-                --shadow: 0 2px 6px rgba(0,0,0,.55);
-                --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.6);
-            }
-        }
-
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: 'Inter', system-ui, sans-serif;
-            font-size: 14px;
-            background: var(--bg-body);
-            color: var(--text-main);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Top Navigation */
-        .navbar {
-            background: var(--gradient-header) !important;
-            padding: .75rem 0;
-            border: 0;
-            box-shadow: 0 2px 6px rgba(0,0,0,.15);
-        }
-        .navbar-brand {
-            font-weight: 700;
-            letter-spacing: .5px;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: .55rem;
-        }
-        .navbar .nav-link {
-            color: #e2e8f0 !important;
-            font-weight: 500;
-            transition: color var(--transition), opacity var(--transition);
-        }
-        .navbar .nav-link:hover,
-        .navbar .nav-link:focus-visible {
-            color: #fff !important;
-            outline: none;
-        }
-
-        /* Tabs */
-        .nav-tabs-container {
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-tabs {
-            gap: .25rem;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .nav-tabs::-webkit-scrollbar { display: none; }
-        .nav-tabs .nav-link {
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            font-weight: 500;
-            padding: .85rem 1.25rem;
-            position: relative;
-            white-space: nowrap;
-            transition: background var(--transition), color var(--transition);
-        }
-        .nav-tabs .nav-link:hover {
-            color: var(--primary);
-            background: var(--bg-soft);
-        }
-        .nav-tabs .nav-link.active {
-            color: var(--primary);
-        }
-        .nav-tabs .nav-link.active::after,
-        .nav-tabs .nav-link:focus-visible::after {
-            content: "";
-            position: absolute;
-            left: 1rem;
-            right: 1rem;
-            bottom: 4px;
-            height: 3px;
-            background: var(--primary);
-            border-radius: 3px;
-        }
-
-        /* Page Header */
-        .page-header {
-            margin: 1.7rem 0 1.35rem;
-        }
-        .page-title {
-            font-size: clamp(1.35rem,1.1rem + 1.2vw,1.9rem);
-            font-weight: 700;
-            letter-spacing: .5px;
-            margin: 0 0 .45rem;
-        }
-        .page-subtitle {
-            margin: 0;
-            color: var(--text-secondary);
-            font-size: .92rem;
-        }
-
-        /* Card Base */
-        .card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            transition: box-shadow var(--transition), transform var(--transition);
-            overflow: hidden;
-        }
-        .card:hover { box-shadow: var(--shadow-hover); }
-        .card-header {
-            background: var(--gradient-muted);
-            border: 0;
-            padding: 1rem 1.15rem 1rem;
-        }
-        .card-title {
-            font-size: 1.02rem;
-            font-weight: 600;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: .55rem;
-        }
-
-        /* Customer List Panel */
-        .customer-list {
-            max-height: 640px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
-        .customer-list::-webkit-scrollbar {
-            width: 8px;
-        }
-        .customer-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .customer-list::-webkit-scrollbar-thumb {
-            background: rgba(100,116,139,.35);
-            border-radius: 10px;
-        }
-        .customer-list::-webkit-scrollbar-thumb:hover {
-            background: rgba(100,116,139,.55);
-        }
-        #searchCustomer {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            font-size: .8rem;
-            padding: .55rem .7rem;
-            border-radius: var(--radius-sm);
-            transition: border-color var(--transition), background var(--transition);
-        }
-        #searchCustomer:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: var(--focus-ring);
-        }
-
-        .customer-item {
-            cursor: pointer;
-            border-left: 3px solid transparent;
-            transition: background var(--transition), border-color var(--transition);
-            background: linear-gradient(180deg,var(--bg-surface),var(--bg-surface));
-        }
-        .customer-item:hover {
-            background: var(--bg-soft);
-        }
-        .customer-item.active {
-            background: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
-            color: #fff;
-            border-left-color: var(--primary-accent);
-        }
-        .customer-item.active small.text-muted,
-        .customer-item.active p.text-muted {
-            color: rgba(255,255,255,.8) !important;
-        }
-        .customer-item .badge.bg-success {
-            background: var(--success) !important;
-        }
-
-        /* Avatar */
-        .customer-item .rounded-circle,
-        .chat-header-avatar {
-            box-shadow: 0 2px 6px -2px rgba(0,0,0,.35);
-        }
-
-        /* Chat Area */
-        .messages-area {
-            max-height: 480px;
-            min-height: 320px;
-            overflow-y: auto;
-            padding: .35rem .35rem 0;
-            scrollbar-width: thin;
-            scroll-behavior: smooth;
-        }
-        .messages-area::-webkit-scrollbar {
-            width: 10px;
-        }
-        .messages-area::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .messages-area::-webkit-scrollbar-thumb {
-            background: rgba(148,163,184,.35);
-            border-radius: 12px;
-        }
-        .messages-area::-webkit-scrollbar-thumb:hover {
-            background: rgba(148,163,184,.55);
-        }
-
-        .chat-messages {
-            display: flex;
-            flex-direction: column;
-            gap: .65rem;
-            padding: .4rem .35rem 1.1rem;
-        }
-
-        .message-bubble {
-            max-width: 72%;
-            padding: .65rem .85rem .55rem;
-            border-radius: 18px;
-            position: relative;
-            font-size: .8rem;
-            line-height: 1.35;
-            display: flex;
-            flex-direction: column;
-            gap: .25rem;
-            word-break: break-word;
-            box-shadow: 0 1px 2px rgba(0,0,0,.08);
-            animation: fadeUp .25s ease;
-        }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .message-customer {
-            background: var(--bg-soft);
-            color: var(--text-main);
-            border-top-left-radius: 6px;
-        }
-        .message-admin {
-            background: var(--primary);
-            color: #fff;
-            margin-left: auto;
-            border-top-right-radius: 6px;
-        }
-        .message-bubble.incoming-flash {
-            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
-            animation: pulseNew 1.2s ease;
-        }
-        @keyframes pulseNew {
-            0% { box-shadow: 0 0 0 0 rgba(99,102,241,.45); }
-            70% { box-shadow: 0 0 0 10px rgba(99,102,241,0); }
-            100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
-        }
-        .message-sender {
-            font-size: .6rem;
-            letter-spacing: .12em;
-            font-weight: 600;
-            text-transform: uppercase;
-            opacity: .7;
-        }
-        .message-time {
-            font-size: .58rem;
-            opacity: .6;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-        }
-
-        /* Empty States */
-        .empty-block {
-            width: 100%;
-            height: 100%;
-            min-height: 320px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 1rem;
-        }
-        .empty-block i {
-            opacity: .35;
-            color: var(--text-secondary);
-        }
-        .empty-block h5 {
-            margin-top: .9rem;
-            font-weight: 600;
-            margin-bottom: .35rem;
-        }
-        .empty-block p {
-            font-size: .75rem;
-            margin: 0;
-            color: var(--text-secondary);
-        }
-
-        /* Reply Area */
-        #replyArea {
-            border-top: 1px solid var(--border);
-            background: var(--bg-soft);
-            padding: .75rem .75rem .75rem;
-        }
-        #replyMessage {
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            font-size: .8rem;
-            padding: .55rem .7rem;
-            border-radius: var(--radius-md);
-            transition: border-color var(--transition), background var(--transition);
-        }
-        #replyMessage:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: var(--focus-ring);
-            background: #fff;
-        }
-        #sendButton {
-            font-weight: 600;
-            letter-spacing: .5px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .4rem;
-        }
-
-        /* Notification badge reused */
-        .new-message-badge {
-            will-change: transform, opacity;
-        }
-        .new-message-badge:focus-visible {
-            outline: none;
-            box-shadow: var(--focus-ring);
-        }
-
-        /* Focus / Accessibility */
-        a:focus-visible,
-        button:focus-visible,
-        .customer-item:focus-visible,
-        .nav-link:focus-visible,
-        textarea:focus-visible {
-            outline: none;
-            box-shadow: var(--focus-ring);
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .messages-area { max-height: 460px; }
-        }
-        @media (max-width: 992px) {
-            .customer-list { max-height: 320px; }
-            .messages-area { max-height: 400px; }
-        }
-        @media (max-width: 768px) {
-            .page-header { margin: 1.25rem 0 1rem; }
-            .messages-area { max-height: 360px; }
-            .customer-item { padding: .85rem .9rem !important; }
-            .message-bubble { max-width: 85%; }
-        }
-
-        /* Reduced Motion */
-        @media (prefers-reduced-motion: reduce) {
-            .message-bubble,
-            .customer-item,
-            .card {
-                transition: none !important;
-                animation: none !important;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Messages - Repairo Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/app.css" />
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-mobile-alt"></i>
-                <span>Repairo</span>
-            </a>
-            <div class="ms-auto d-flex align-items-center gap-3">
-                <a class="nav-link d-flex align-items-center gap-2" href="/logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Tabs -->
-    <div class="nav-tabs-container">
-        <div class="container-fluid px-4">
-            <ul class="nav nav-tabs flex-nowrap">
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/customers">
-                        <i class="fas fa-users me-2"></i>Customers
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="/admin/messages">
-                        <i class="fas fa-comments me-2"></i>Messages
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/repairs">
-                        <i class="fas fa-tools me-2"></i>Repairs
-                    </a>
-                </li>
-            </ul>
-        </div>
+<body data-page="messages">
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand" href="/admin/dashboard">
+        <i class="fas fa-mobile-alt"></i><span>Repairo</span>
+      </a>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <a class="nav-link d-flex align-items-center gap-2" href="/logout">
+          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </a>
+      </div>
     </div>
+  </nav>
 
-    <!-- Main -->
-    <main class="container-fluid px-4 pb-5">
-        <header class="page-header">
-            <h1 class="page-title">Customer Messages</h1>
-            <p class="page-subtitle">Manage customer conversations.</p>
-        </header>
+  <div class="nav-tabs-container">
+    <div class="container-fluid px-4">
+      <ul class="nav nav-tabs flex-nowrap">
+        <li class="nav-item"><a class="nav-link" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/customers"><i class="fas fa-users me-2"></i>Customers</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/admin/messages"><i class="fas fa-comments me-2"></i>Messages</a></li>
+        <li class="nav-item"><a class="nav-link" href="/admin/repairs"><i class="fas fa-tools me-2"></i>Repairs</a></li>
+      </ul>
+    </div>
+  </div>
 
-        <div class="row g-4">
-            <!-- Customer List -->
-            <div class="col-lg-4 col-md-5">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="card-title"><i class="fas fa-users"></i>Customers</h5>
-                        <div class="mt-3">
-                            <input type="text" id="searchCustomer" placeholder="Search..." class="w-100"
-                                   onkeyup="MessagesApp.filterCustomers()"/>
-                        </div>
-                    </div>
-                    <div class="card-body p-0 customer-list">
-                        <div th:if="${customers != null and !customers.empty}">
-                            <div th:each="customer, iterStat : ${customers}"
-                                 class="customer-item p-3 border-bottom"
-                                 th:classappend="${iterStat.index == 0} ? 'active' : ''"
-                                 th:data-customer-id="${customer.customerId}"
-                                 onclick="MessagesApp.selectCustomer(this)">
+  <main class="container-fluid px-4 pb-5">
+    <header class="page-header">
+      <h1 class="page-title">Customer Messages</h1>
+      <p class="page-subtitle">Manage customer conversations.</p>
+    </header>
 
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3">
-                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                             style="width: 46px; height: 46px; font-weight: 600;">
-                                            <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1 min-width-0">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <h6 class="mb-1 fw-semibold text-truncate" th:text="${customer.name}">Customer Name</h6>
-                                            <small class="text-muted"
-                                                   th:if="${customer.messages != null and !customer.messages.empty}"
-                                                   th:text="${#temporals.format(customer.messages[customer.messages.size() - 1].timestamp, 'HH:mm')}">
-                                                Time
-                                            </small>
-                                        </div>
-                                        <p class="mb-1 text-muted small text-truncate" th:text="${customer.phone}">Phone</p>
-                                        <small class="text-muted d-block text-truncate"
-                                               th:if="${customer.messages != null and !customer.messages.empty}"
-                                               th:text="${customer.messages[customer.messages.size() - 1].text.length() > 35 
-                                                       ? customer.messages[customer.messages.size() - 1].text.substring(0, 35) + '...'
-                                                       : customer.messages[customer.messages.size() - 1].text}">
-                                            Last message
-                                        </small>
-                                        <small th:if="${customer.messages == null or customer.messages.empty}"
-                                               class="text-muted">No messages yet</small>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                        <div th:if="${customers == null or customers.empty}" class="empty-block">
-                            <div>
-                                <i class="fas fa-comments mb-3" style="font-size:3rem;"></i>
-                                <h6>No Conversations</h6>
-                                <p>Messages will appear when customers reach out.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="row g-4">
+      <div class="col-lg-4 col-md-5">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-users"></i>Customers</h5>
+            <div class="mt-3">
+              <input id="searchCustomer" type="text" placeholder="Search..." class="w-100 form-control form-control-sm" />
             </div>
-
-            <!-- Chat Panel -->
-            <div class="col-lg-8 col-md-7">
-                <div class="card h-100 d-flex">
-                    <div class="card-header d-flex align-items-center gap-3" id="chatHeader" style="display:none;">
-                        <div>
-                            <div id="customerAvatar"
-                                 class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center chat-header-avatar"
-                                 style="width:44px;height:44px;font-weight:600;">
-                                U
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 min-width-0">
-                            <h5 class="card-title mb-0 d-flex align-items-center gap-2" id="customerName">Customer Name</h5>
-                            <small id="customerPhone" class="text-secondary d-block mt-1" style="font-size:.68rem; letter-spacing:.08em;">Phone Number</small>
-                        </div>
+          </div>
+          <div class="card-body p-0 customer-list" role="listbox" aria-label="Customer conversations">
+            <div th:if="${customers != null and !customers.empty}">
+              <div th:each="customer, iterStat : ${customers}"
+                   class="customer-item"
+                   th:classappend="${iterStat.index == 0}? 'active' : ''"
+                   th:data-customer-id="${customer.customerId}">
+                <div class="d-flex align-items-center">
+                  <div class="me-3">
+                    <div class="avatar-circle">
+                      <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
                     </div>
-
-                    <div class="card-body d-flex flex-column pt-0">
-                        <!-- Empty State -->
-                        <div id="emptyState" class="empty-block flex-grow-1">
-                            <div>
-                                <i class="fas fa-comment-dots mb-3" style="font-size:4rem;"></i>
-                                <h5>Select a Customer</h5>
-                                <p>Choose from the list to view messages.</p>
-                            </div>
-                        </div>
-
-                        <!-- Messages Container -->
-                        <div id="messagesContainer" class="flex-grow-1 messages-area mb-2" style="display:none;">
-                            <!-- Dynamic chat -->
-                        </div>
+                  </div>
+                  <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <h6 class="mb-1 fw-semibold text-truncate" th:text="${customer.name}">Customer Name</h6>
+                      <small class="text-muted"
+                             th:if="${customer.messages != null and !customer.messages.empty}"
+                             th:text="${#temporals.format(customer.messages[customer.messages.size()-1].timestamp, 'HH:mm')}">
+                        Time
+                      </small>
                     </div>
-
-                    <div class="card-footer" id="replyArea" style="display:none;">
-                        <div class="input-group">
-                            <textarea id="replyMessage" class="form-control" rows="2" placeholder="Type message..."
-                                      style="resize:none;"></textarea>
-                            <button class="btn btn-primary px-4" id="sendButton" onclick="MessagesApp.sendMessage()">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
+                    <p class="mb-1 text-muted small text-truncate" th:text="${customer.phone}">Phone</p>
+                    <small class="text-muted d-block text-truncate"
+                           th:if="${customer.messages != null and !customer.messages.empty}"
+                           th:text="${customer.messages[customer.messages.size()-1].text.length() > 35 ? customer.messages[customer.messages.size()-1].text.substring(0,35) + '...' : customer.messages[customer.messages.size()-1].text}">
+                      Last message
+                    </small>
+                    <small th:if="${customer.messages == null or customer.messages.empty}"
+                           class="text-muted">No messages yet</small>
+                  </div>
                 </div>
+              </div>
             </div>
+            <div th:if="${customers == null or customers.empty}" class="empty-state" style="padding:2.5rem 1rem;">
+              <i class="fas fa-comments mb-3" style="font-size:3rem;"></i>
+              <h5>No Conversations</h5>
+              <p>Messages will appear when users contact you.</p>
+            </div>
+          </div>
         </div>
-    </main>
+      </div>
 
-    <!-- Vendor JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      <div class="col-lg-8 col-md-7">
+        <div class="card h-100 d-flex">
+          <div class="card-header d-flex align-items-center gap-3" id="chatHeader" style="display:none;">
+            <div>
+              <div id="customerAvatar" class="avatar-circle">U</div>
+            </div>
+            <div class="flex-grow-1 min-width-0">
+              <h5 class="card-title mb-0 d-flex align-items-center gap-2" id="customerName">Customer Name</h5>
+              <small id="customerPhone" class="text-secondary d-block mt-1" style="font-size:.68rem;letter-spacing:.08em;">Phone Number</small>
+            </div>
+          </div>
+          <div class="card-body d-flex flex-column pt-0">
+            <div id="emptyState" class="empty-state flex-grow-1">
+              <i class="fas fa-comment-dots mb-3" style="font-size:4rem;"></i>
+              <h5>Select a Customer</h5>
+              <p>Choose from the list to view messages.</p>
+            </div>
+            <div id="messagesContainer" class="flex-grow-1 messages-area mb-2" style="display:none;"></div>
+          </div>
+          <div class="card-footer" id="replyArea" style="display:none;">
+            <div class="input-group">
+              <textarea id="replyMessage" class="form-control" rows="2" placeholder="Type message..." style="resize:none;"></textarea>
+              <button class="btn btn-primary px-4" id="sendButton"><i class="fas fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 
-    <!-- Messaging Logic (kept: only minimal safe enhancements) -->
-    <script th:inline="javascript">
-        const MessagesApp = {
-            state: {
-                currentCustomerId: null,
-                customers: [],
-                lastChecked: null,
-                isPolling: false,
-                justSentMessage: false
-            },
-            config: {
-                pollingInterval: 3000,
-                messageAfterSendDelay: 100,
-                notificationResetDelay: 2000
-            },
-            elements: {},
-            polling: { interval: null },
-
-            init() {
-                this.cacheElements();
-                this.setupEventListeners();
-                this.initializeLastChecked();
-                this.performInitialLoad();
-            },
-            cacheElements() {
-                this.elements = {
-                    customerList: document.querySelector('.customer-list'),
-                    searchCustomer: document.getElementById('searchCustomer'),
-                    chatHeader: document.getElementById('chatHeader'),
-                    customerName: document.getElementById('customerName'),
-                    customerPhone: document.getElementById('customerPhone'),
-                    customerAvatar: document.getElementById('customerAvatar'),
-                    emptyState: document.getElementById('emptyState'),
-                    messagesContainer: document.getElementById('messagesContainer'),
-                    replyArea: document.getElementById('replyArea'),
-                    replyMessage: document.getElementById('replyMessage'),
-                    sendButton: document.getElementById('sendButton')
-                };
-            },
-            setupEventListeners() {
-                if (this.elements.replyMessage) {
-                    this.elements.replyMessage.addEventListener('keypress', (e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            this.sendMessage();
-                        }
-                    });
-                }
-                document.addEventListener('visibilitychange', () => {
-                    document.hidden ? this.stopPolling() : this.startPolling();
-                });
-                window.addEventListener('beforeunload', () => this.stopPolling());
-            },
-            initializeLastChecked() {
-                this.state.lastChecked = new Date().toISOString();
-                console.log('📅 lastChecked initialized:', this.state.lastChecked);
-            },
-            performInitialLoad() {
-                this.checkForNewMessages(true)
-                    .then(() => {
-                        this.selectFirstCustomer();
-                        this.startPolling();
-                    })
-                    .catch(() => {
-                        this.handleInitialLoadFallback();
-                        this.startPolling();
-                    });
-            },
-            selectFirstCustomer() {
-                if (this.state.customers && this.state.customers.length > 0) {
-                    const first = document.querySelector('.customer-item');
-                    if (first) this.selectCustomer(first);
-                }
-            },
-            handleInitialLoadFallback() {
-                const firstCustomer = document.querySelector('.customer-item');
-                if (firstCustomer) {
-                    const els = document.querySelectorAll('.customer-item');
-                    this.state.customers = Array.from(els).map(el => ({
-                        customerId: el.dataset.customerId,
-                        name: el.querySelector('h6')?.textContent.trim(),
-                        phone: el.querySelector('p')?.textContent.trim(),
-                        messages: []
-                    }));
-                    this.selectCustomer(firstCustomer);
-                }
-            },
-
-            /* CUSTOMER SELECTION */
-            selectCustomer(element) {
-                console.log('👤 Selecting customer', element.dataset.customerId);
-                document.querySelectorAll('.customer-item').forEach(i => i.classList.remove('active'));
-                element.classList.add('active');
-                this.state.currentCustomerId = element.dataset.customerId;
-                const customer = this.state.customers.find(c => c.customerId === this.state.currentCustomerId);
-                if (!customer) return;
-                this.updateChatHeader(customer);
-                this.showChatInterface();
-                this.loadMessages(customer);
-            },
-            updateChatHeader(customer) {
-                this.elements.customerName.textContent = customer.name || 'Customer';
-                this.elements.customerPhone.textContent = customer.phone || '';
-                this.elements.customerAvatar.textContent = customer.name
-                    ? customer.name.substring(0,1).toUpperCase()
-                    : 'U';
-            },
-            showChatInterface() {
-                this.elements.chatHeader.style.display = 'flex';
-                this.elements.emptyState.style.display = 'none';
-                this.elements.messagesContainer.style.display = 'block';
-                this.elements.replyArea.style.display = 'block';
-            },
-            filterCustomers() {
-                const term = this.elements.searchCustomer.value.toLowerCase();
-                document.querySelectorAll('.customer-item').forEach(item => {
-                    const name = item.querySelector('h6')?.textContent.toLowerCase() || '';
-                    const phone = item.querySelector('p')?.textContent.toLowerCase() || '';
-                    item.style.display = (name.includes(term) || phone.includes(term)) ? 'block' : 'none';
-                });
-            },
-
-            /* MESSAGES */
-            loadMessages(customer) {
-                const container = this.elements.messagesContainer;
-                if (!container) return;
-                container.innerHTML = '';
-                if (!customer.messages || customer.messages.length === 0) {
-                    this.showEmptyMessages();
-                    return;
-                }
-                const chatDiv = this.createMessagesContainer();
-                this.renderMessages(customer.messages, customer.name, chatDiv);
-                container.appendChild(chatDiv);
-                this.scrollToBottom();
-            },
-            showEmptyMessages() {
-                this.elements.messagesContainer.innerHTML = `
-                    <div class="empty-block" style="min-height:260px;">
-                        <div>
-                            <i class="fas fa-comments mb-2" style="font-size:2.4rem;"></i>
-                            <p class="mb-0">No messages yet</p>
-                        </div>
-                    </div>`;
-            },
-            createMessagesContainer() {
-                const div = document.createElement('div');
-                div.className = 'chat-messages';
-                return div;
-            },
-            renderMessages(messages, customerName, container) {
-                messages.forEach(m => {
-                    const el = this.createMessageElement(m, customerName);
-                    container.appendChild(el);
-                });
-            },
-            createMessageElement(message, customerName) {
-                const wrap = document.createElement('div');
-                wrap.className = 'message-bubble ' + (message.from === 'customer' ? 'message-customer incoming-flash' : 'message-admin');
-                const time = new Date(message.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                const isAdmin = message.from === 'admin';
-                wrap.innerHTML = `
-                    <div class="message-sender">${isAdmin ? 'You' : (customerName || 'Customer')}</div>
-                    <div class="message-text">${this.escapeHtml(message.text)}</div>
-                    <div class="message-time">${time}</div>`;
-                if (isAdmin) wrap.classList.remove('incoming-flash');
-                return wrap;
-            },
-            addMessageToCurrentChat(from, text) {
-                if (!this.state.currentCustomerId) return;
-                let chatDiv = this.elements.messagesContainer.querySelector('.chat-messages');
-                if (!chatDiv) {
-                    chatDiv = this.createMessagesContainer();
-                    this.elements.messagesContainer.innerHTML = '';
-                    this.elements.messagesContainer.appendChild(chatDiv);
-                }
-                const currentCustomer = this.state.customers.find(c => c.customerId === this.state.currentCustomerId);
-                const name = currentCustomer ? currentCustomer.name : 'Customer';
-                const el = this.createMessageElement({
-                    from,
-                    text,
-                    timestamp: new Date().toISOString()
-                }, name);
-                chatDiv.appendChild(el);
-                this.scrollToBottom();
-                if (currentCustomer) {
-                    currentCustomer.messages = currentCustomer.messages || [];
-                    currentCustomer.messages.push({
-                        from,
-                        text,
-                        timestamp: new Date().toISOString()
-                    });
-                }
-            },
-            sendMessage() {
-                const val = this.elements.replyMessage.value.trim();
-                if (!val || !this.state.currentCustomerId) {
-                    alert('Please enter a message');
-                    return;
-                }
-                console.log('📤 Sending:', val.slice(0,40));
-                this.disableSendButton();
-                fetch('/admin/send-message', {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                    body: `customerId=${this.state.currentCustomerId}&message=${encodeURIComponent(val)}`
-                })
-                .then(r=>r.text())
-                .then(res=>{
-                    if (res === 'success') {
-                        this.handleMessageSentSuccess(val);
-                    } else {
-                        alert('Failed to send message: ' + res);
-                    }
-                })
-                .catch(err=>{
-                    console.error('❌ Send error', err);
-                    alert('Failed to send message');
-                })
-                .finally(()=> this.enableSendButton());
-            },
-            handleMessageSentSuccess(message) {
-                console.log('✅ Message sent');
-                this.elements.replyMessage.value = '';
-                this.addMessageToCurrentChat('admin', message);
-                this.state.justSentMessage = true;
-                this.state.lastChecked = new Date().toISOString();
-                setTimeout(()=>{
-                    this.checkForNewMessages(true);
-                    setTimeout(()=> this.state.justSentMessage = false, this.config.notificationResetDelay);
-                }, this.config.messageAfterSendDelay);
-            },
-            disableSendButton() {
-                this.elements.sendButton.disabled = true;
-                this.elements.sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            },
-            enableSendButton() {
-                this.elements.sendButton.disabled = false;
-                this.elements.sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-            },
-
-            /* POLLING */
-            startPolling() {
-                if (this.state.isPolling) return;
-                this.state.isPolling = true;
-                this.polling.interval = setInterval(()=> this.checkForNewMessages(), this.config.pollingInterval);
-                console.log('🔄 Polling started every', this.config.pollingInterval + 'ms');
-            },
-            stopPolling() {
-                if (this.polling.interval) {
-                    clearInterval(this.polling.interval);
-                    this.polling.interval = null;
-                    this.state.isPolling = false;
-                    console.log('⏸️ Polling stopped');
-                }
-            },
-            checkForNewMessages(silent = false) {
-                return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(this.state.lastChecked)}`)
-                    .then(r=>r.json())
-                    .then(data=>{
-                        if (!silent) console.log('📨 Polling response:', data);
-                        if (data.success) {
-                            this.handlePollingSuccess(data, silent);
-                            return data;
-                        }
-                        throw new Error(data.error || 'Polling failed');
-                    })
-                    .catch(err=>{
-                        if (!silent) console.error('❌ Polling error', err);
-                        throw err;
-                    });
-            },
-            handlePollingSuccess(data, silent) {
-                if (data.customers) {
-                    this.state.customers = data.customers;
-                }
-                if (data.hasNewMessages && data.newMessageCount > 0 && !silent && !this.state.justSentMessage) {
-                    console.log(`🆕 ${data.newMessageCount} new messages`);
-                    this.showNewMessageNotification(data.newMessageCount);
-                }
-                if (data.customers && data.customers.length > 0) {
-                    this.refreshCustomerList(data.customers);
-                }
-                if (data.timestamp) {
-                    this.state.lastChecked = data.timestamp;
-                }
-            },
-
-            /* UI UPDATES */
-            showNewMessageNotification(count) {
-                const existing = document.querySelector('.new-message-badge');
-                if (existing) existing.remove();
-                const badge = document.createElement('button');
-                badge.type = 'button';
-                badge.className = 'new-message-badge';
-                badge.style.cssText = `
-                    position:fixed;
-                    top:20px;
-                    right:20px;
-                    background:var(--success);
-                    color:#fff;
-                    padding:.75rem 1rem;
-                    border-radius:10px;
-                    font-weight:600;
-                    font-size:.8rem;
-                    display:flex;
-                    align-items:center;
-                    gap:.5rem;
-                    border:none;
-                    cursor:pointer;
-                    box-shadow:0 6px 18px -4px rgba(16,185,129,.55),0 2px 6px -2px rgba(0,0,0,.35);
-                    z-index:1050;
-                    letter-spacing:.4px;
-                    transition:background .25s,transform .25s;
-                `;
-                badge.innerHTML = `<i class="fas fa-comments"></i><span>${count} new message${count>1?'s':''} • Refresh</span>`;
-                badge.addEventListener('click', ()=> location.reload());
-                badge.addEventListener('mouseenter', ()=> badge.style.transform='translateY(-2px)');
-                badge.addEventListener('mouseleave', ()=> badge.style.transform='');
-                document.body.appendChild(badge);
-                setTimeout(()=>{
-                    if (badge.isConnected){
-                        badge.style.opacity='0';
-                        badge.style.transform='translateY(-4px)';
-                        setTimeout(()=> badge.remove(), 320);
-                    }
-                },10000);
-            },
-            refreshCustomerList(customers) {
-                const list = this.elements.customerList;
-                if (!list) return;
-                this.state.customers = customers;
-                window.customers = customers; // legacy
-                list.innerHTML = '';
-                if (customers.length === 0) {
-                    list.innerHTML = `
-                        <div class="empty-block" style="min-height:220px;">
-                            <div>
-                                <i class="fas fa-users mb-2" style="font-size:2.2rem;"></i>
-                                <p class="mb-0">No customers</p>
-                            </div>
-                        </div>`;
-                    return;
-                }
-                customers.forEach(c => {
-                    const item = this.createCustomerListItem(c);
-                    list.appendChild(item);
-                });
-                this.refreshSelectedCustomer();
-            },
-            createCustomerListItem(customer) {
-                const last = customer.messages && customer.messages.length
-                    ? customer.messages[customer.messages.length - 1]
-                    : null;
-                const lastText = last
-                    ? (last.text.length > 35 ? last.text.substring(0,35) + '...' : last.text)
-                    : 'No messages';
-                const lastTime = last
-                    ? new Date(last.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
-                    : '';
-                const isNew = last &&
-                               last.from === 'customer' &&
-                               new Date(last.timestamp) > new Date(Date.now() - 30000);
-                const active = this.state.currentCustomerId === customer.customerId;
-                const node = document.createElement('div');
-                node.className = `customer-item p-3 border-bottom ${active ? 'active':''}`;
-                node.dataset.customerId = customer.customerId;
-                node.onclick = () => this.selectCustomer(node);
-                node.innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                 style="width:42px;height:42px;font-weight:600;">
-                                <span>${customer.name ? customer.name.substring(0,1).toUpperCase() : 'U'}</span>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 min-width-0">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <h6 class="mb-1 fw-semibold text-truncate">
-                                    ${customer.name || 'Customer'}
-                                    ${isNew ? '<span class="badge bg-success ms-1" style="font-size:.55em;">NEW</span>' : ''}
-                                </h6>
-                                <small class="text-muted">${lastTime}</small>
-                            </div>
-                            <p class="mb-1 text-muted small text-truncate">${customer.phone || ''}</p>
-                            <p class="mb-0 text-muted small text-truncate">${lastText}</p>
-                        </div>
-                    </div>`;
-                return node;
-            },
-            refreshSelectedCustomer() {
-                if (this.state.currentCustomerId) {
-                    const updated = this.state.customers.find(c => c.customerId === this.state.currentCustomerId);
-                    if (updated) this.loadMessages(updated);
-                } else if (this.state.customers.length > 0) {
-                    const first = this.elements.customerList.querySelector('.customer-item');
-                    if (first) this.selectCustomer(first);
-                }
-            },
-
-            /* UTIL */
-            scrollToBottom() {
-                const el = this.elements.messagesContainer;
-                if (el) el.scrollTop = el.scrollHeight;
-            },
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => MessagesApp.init());
-
-        // Global compatibility aliases
-        window.selectCustomer = el => MessagesApp.selectCustomer(el);
-        window.sendMessage = () => MessagesApp.sendMessage();
-        window.filterCustomers = () => MessagesApp.filterCustomers();
-        window.MessagesApp = MessagesApp;
-    </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>
