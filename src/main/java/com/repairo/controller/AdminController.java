@@ -1,28 +1,38 @@
 package com.repairo.controller;
 
 import com.repairo.config.MongoEncryptionConfig;
+import com.repairo.dto.*;
 import com.repairo.model.Customer;
 import com.repairo.model.Message;
-import com.repairo.model.OnboardingState;
 import com.repairo.model.RepairStatus;
+import com.repairo.model.RepairStatusChange;
 import com.repairo.repository.CustomerRepository;
+import com.repairo.repository.RepairStatusChangeRepository;
 import com.repairo.service.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin")
+@Validated
 public class AdminController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -31,10 +41,19 @@ public class AdminController {
     private CustomerRepository customerRepository;
     
     @Autowired
+    private RepairStatusChangeRepository repairStatusChangeRepository;
+    
+    @Autowired
     private MessageService messageService;
     
     @Autowired
     private MongoEncryptionConfig encryptionConfig;
+
+    @Autowired
+    private com.repairo.service.PollUpdateService pollUpdateService;
+
+    @Autowired(required = false)
+    private com.repairo.service.WebSocketEventPublisher webSocketEventPublisher;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -77,22 +96,42 @@ public class AdminController {
     }
 
     @GetMapping("/customers")
-    public String customers(Model model, @RequestParam(required = false) String search) {
-        List<Customer> customers;
+    public String customers(Model model, 
+                           @RequestParam(required = false) String search,
+                           @RequestParam(defaultValue = "0") int page,
+                           @RequestParam(defaultValue = "20") int size,
+                           @RequestParam(defaultValue = "lastInteraction") String sortBy,
+                           @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        // Create pageable with sorting
+        Sort sort = sortDir.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Customer> customerPage;
         if (search != null && !search.isEmpty()) {
-            customers = customerRepository.findByNameContainingIgnoreCase(search);
+            customerPage = customerRepository.findByNameContainingIgnoreCase(search, pageable);
         } else {
-            customers = customerRepository.findAll();
+            customerPage = customerRepository.findAll(pageable);
         }
         
         // Decrypt sensitive fields for display
-        customers.forEach(customer -> {
+        customerPage.getContent().forEach(customer -> {
             customer.setPhone(encryptionConfig.decryptSensitiveField(customer.getPhone(), "phone"));
             customer.setIssue(encryptionConfig.decryptSensitiveField(customer.getIssue(), "issue"));
         });
         
-        model.addAttribute("customers", customers);
+        model.addAttribute("customersPage", customerPage);
+        model.addAttribute("customers", customerPage.getContent());
         model.addAttribute("search", search);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("pageSize", size);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("totalPages", customerPage.getTotalPages());
+        model.addAttribute("totalElements", customerPage.getTotalElements());
+        
         return "admin/customers";
     }
 
@@ -172,39 +211,90 @@ public class AdminController {
         return "admin/repairs";
     }
     
-    @PostMapping("/update-status")
+    @PostMapping(value = "/update-status", consumes = "application/json", produces = "application/json")
     @ResponseBody
-    public String updateRepairStatus(@RequestParam String customerId, @RequestParam String status) {
-        Optional<Customer> customerOpt = customerRepository.findById(customerId);
-        if (customerOpt.isPresent()) {
+    public ResponseEntity<ApiResponse<String>> updateRepairStatus(@Valid @RequestBody UpdateStatusRequest request,
+                                                                  Authentication authentication) {
+        try {
+            Optional<Customer> customerOpt = customerRepository.findById(request.getCustomerId());
+            if (customerOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Customer not found"));
+            }
+            
             Customer customer = customerOpt.get();
-            customer.setRepairStatus(RepairStatus.valueOf(status));
+            
+            // Check version for optimistic locking if provided
+            if (request.getVersion() != null && customer.getVersion() != null && !customer.getVersion().equals(request.getVersion())) {
+                return ResponseEntity.status(409).body(ApiResponse.error("Customer was modified by another user. Please refresh and try again."));
+            }
+            
+            RepairStatus oldStatus = customer.getRepairStatus();
+            customer.setRepairStatus(request.getStatus());
             customer.setLastInteraction(LocalDateTime.now());
             customerRepository.save(customer);
-            return "success";
+            
+            // Record status change in audit log
+            String username = authentication != null ? authentication.getName() : "system";
+            RepairStatusChange statusChange = new RepairStatusChange(
+                request.getCustomerId(), oldStatus, request.getStatus(), username
+            );
+            repairStatusChangeRepository.save(statusChange);
+            
+            logger.info("Status updated for customer {} from {} to {} by {}", 
+                       request.getCustomerId(), oldStatus, request.getStatus(), username);
+            
+            if (webSocketEventPublisher != null) {
+                webSocketEventPublisher.publishStatusChange(request.getCustomerId(), oldStatus.name(), request.getStatus().name());
+            }
+            return ResponseEntity.ok(ApiResponse.success("Status updated successfully"));
+            
+        } catch (Exception e) {
+            logger.error("Error updating status for customer {}: {}", request.getCustomerId(), e.getMessage());
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to update status: " + e.getMessage()));
         }
-        return "error";
     }
     
-    @PostMapping("/send-message")
+    @PostMapping(value = "/send-message", consumes = "application/json", produces = "application/json")
     @ResponseBody
-    public String sendMessage(@RequestParam String customerId, @RequestParam String message) {
+    public ResponseEntity<ApiResponse<String>> sendMessage(@Valid @RequestBody SendMessageRequest request) {
         try {
-            messageService.sendReplyMessage(customerId, message);
-            return "success";
+            messageService.sendReplyMessage(request.getCustomerId(), request.getMessage());
+            if (webSocketEventPublisher != null) {
+                String preview = request.getMessage();
+                if (preview.length() > 40) preview = preview.substring(0, 40) + "...";
+                webSocketEventPublisher.publishNewMessage(request.getCustomerId(), preview);
+            }
+            return ResponseEntity.ok(ApiResponse.success("Message sent successfully"));
         } catch (Exception e) {
-            logger.error("Error sending message to customer {}: {}", customerId, e.getMessage());
-            return "error: " + e.getMessage();
+            logger.error("Error sending message to customer {}: {}", request.getCustomerId(), e.getMessage());
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Failed to send message: " + e.getMessage()));
         }
     }
     
     @GetMapping("/check-new-messages")
     @ResponseBody
-    public Map<String, Object> checkNewMessages(@RequestParam(required = false) String lastChecked) {
-        Map<String, Object> response = new HashMap<>();
-        
+    public ResponseEntity<ApiResponse<CheckNewMessagesResponse>> checkNewMessages(@RequestParam(required = false) String lastChecked,
+                                                                                  @RequestParam(name = "diff", required = false, defaultValue = "false") boolean diff) {
         try {
             logger.debug("Checking for new messages. lastChecked: {}", lastChecked);
+
+            // If diff mode requested, leverage PollUpdateService for minimal response
+            if (diff) {
+                LocalDateTime lastCheckedTime = null;
+                if (lastChecked != null && !lastChecked.isEmpty()) {
+                    try {
+                        if (lastChecked.contains("T")) {
+                            lastCheckedTime = LocalDateTime.parse(lastChecked.substring(0, 19));
+                        } else {
+                            lastCheckedTime = LocalDateTime.parse(lastChecked);
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Invalid lastChecked for diff mode: {}", lastChecked);
+                    }
+                }
+                CheckNewMessagesResponse minimal = pollUpdateService.getMinimalUpdates(lastCheckedTime);
+                return ResponseEntity.ok(ApiResponse.success(minimal));
+            }
             
             List<Customer> customers = customerRepository.findAll();
             List<Customer> validCustomers = new ArrayList<>();
@@ -299,21 +389,56 @@ public class AdminController {
                 return time2.compareTo(time1);
             });
             
-            response.put("success", true);
-            response.put("newMessageCount", newMessageCount);
-            response.put("hasNewMessages", hasNewMessages);
-            response.put("totalCustomers", validCustomers.size());
-            response.put("timestamp", LocalDateTime.now().toString());
-            response.put("customers", validCustomers); // Always return customers for UI updates
+            CheckNewMessagesResponse response = new CheckNewMessagesResponse(
+                hasNewMessages, newMessageCount, validCustomers.size(), validCustomers
+            );
             
             logger.debug("Check complete. New messages: {}, Total customers: {}", newMessageCount, validCustomers.size());
             
+            return ResponseEntity.ok(ApiResponse.success(response));
+            
         } catch (Exception e) {
             logger.error("Error checking for new messages", e);
-            response.put("success", false);
-            response.put("error", e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Failed to check messages: " + e.getMessage()));
         }
-        
-        return response;
+    }
+
+    /**
+     * Simple DB health & diagnostics endpoint (non-production) to help investigate Mongo errors.
+     * Returns counts and a lightweight sample (customerId + status only) so that we can confirm
+     * connectivity vs. serialization / encryption issues.
+     */
+    @GetMapping(value = "/db-health", produces = "application/json")
+    @ResponseBody
+    public ResponseEntity<ApiResponse<?>> dbHealth() {
+        try {
+            long total = customerRepository.count();
+            long pending = customerRepository.countByRepairStatus(RepairStatus.PENDING);
+            long inProgress = customerRepository.countByRepairStatus(RepairStatus.IN_PROGRESS);
+            long completed = customerRepository.countByRepairStatus(RepairStatus.COMPLETED);
+
+            List<Customer> sample = customerRepository.findAll().stream().limit(3).toList();
+
+            // Minimal projection DTO (local record) to avoid serialization of encrypted fields
+            record SampleCustomer(String customerId, RepairStatus repairStatus, Long version) {}
+            List<SampleCustomer> sampleView = new ArrayList<>();
+            for (Customer c : sample) {
+                sampleView.add(new SampleCustomer(c.getCustomerId(), c.getRepairStatus(), c.getVersion()));
+            }
+
+            var payload = new java.util.LinkedHashMap<String, Object>();
+            payload.put("ok", true);
+            payload.put("totalCustomers", total);
+            payload.put("pending", pending);
+            payload.put("inProgress", inProgress);
+            payload.put("completed", completed);
+            payload.put("sample", sampleView);
+            payload.put("timestamp", java.time.Instant.now().toString());
+            return ResponseEntity.ok(ApiResponse.success(payload));
+        } catch (Exception ex) {
+            logger.error("DB health check failed", ex);
+            return ResponseEntity.internalServerError().body(ApiResponse.error("DB error: " + ex.getClass().getSimpleName() + " - " + ex.getMessage()));
+        }
     }
 }

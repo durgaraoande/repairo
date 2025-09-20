@@ -70,7 +70,7 @@
     </div>
 
     <section class="repairs-grid" th:if="${not #lists.isEmpty(customers)}" aria-label="Repair cards">
-      <div th:each="customer : ${customers}" class="repair-card">
+  <div th:each="customer : ${customers}" class="repair-card" th:attr="data-version=${customer.version}">
         <div class="repair-card-header">
           <div class="profile">
             <div class="repair-avatar">
@@ -101,8 +101,9 @@
           </div>
           <div class="field-block">
             <label>Update Status</label>
-            <select class="repair-status-select"
-                    th:data-customer-id="${customer.customerId}">
+      <select class="repair-status-select"
+        th:data-customer-id="${customer.customerId}"
+        th:attr="data-version=${customer.version}">
               <option th:value="PENDING"
                       th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).PENDING}">Pending</option>
               <option th:value="IN_PROGRESS"

@@ -84,7 +84,7 @@
                 </div>
               </td>
             </tr>
-            <tr th:each="customer : ${customers}" data-customer-row>
+            <tr th:each="customer : ${customers}" data-customer-row th:attr="data-version=${customer.version}">
               <td data-label="Customer">
                 <div class="d-flex align-items-center gap-3">
                   <div class="avatar-circle">
@@ -107,8 +107,9 @@
                       th:title="${customer.issue}">No issue specified</span>
               </td>
               <td data-label="Status">
-                <select class="form-select form-select-sm customer-status-select"
-                        th:data-customer-id="${customer.customerId}">
+    <select class="form-select form-select-sm customer-status-select"
+      th:data-customer-id="${customer.customerId}"
+      th:attr="data-version=${customer.version}">
                   <option th:value="PENDING"
                           th:selected="${customer.repairStatus == T(com.repairo.model.RepairStatus).PENDING}">
                     Pending
@@ -146,6 +147,19 @@
         </table>
       </div>
       <div id="customersPaginationContainer"></div>
+      <nav th:if="${totalPages > 1}" aria-label="Server pagination" class="mt-3">
+        <ul class="pagination pagination-sm">
+          <li class="page-item" th:classappend="${currentPage == 0}? 'disabled'">
+            <a class="page-link" th:href="@{'/admin/customers'(page=${currentPage-1},size=${pageSize},search=${search},sortBy=${sortBy},sortDir=${sortDir})}">&laquo;</a>
+          </li>
+          <li class="page-item" th:each="p : ${#numbers.sequence(0, totalPages-1)}" th:classappend="${p==currentPage}? 'active'">
+            <a class="page-link" th:text="${p+1}" th:href="@{'/admin/customers'(page=${p},size=${pageSize},search=${search},sortBy=${sortBy},sortDir=${sortDir})}">1</a>
+          </li>
+          <li class="page-item" th:classappend="${currentPage+1 >= totalPages}? 'disabled'">
+            <a class="page-link" th:href="@{'/admin/customers'(page=${currentPage+1},size=${pageSize},search=${search},sortBy=${sortBy},sortDir=${sortDir})}">&raquo;</a>
+          </li>
+        </ul>
+      </nav>
     </section>
   </main>
 

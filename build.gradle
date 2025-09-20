@@ -31,6 +31,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.springframework:spring-messaging'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

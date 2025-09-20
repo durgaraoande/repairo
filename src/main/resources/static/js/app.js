@@ -39,11 +39,33 @@
 
   function postForm(url, formObj={}) {
     const body = Object.entries(formObj)
+      .filter(([,v]) => v !== undefined && v !== null)
       .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
     const csrf = getCsrf();
-    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept':'application/json,text/plain;q=0.9' };
     if (csrf) headers[csrf.header] = csrf.token;
-    return fetch(url, { method:'POST', headers, body });
+    return fetch(url, { method:'POST', headers, body })
+      .then(async r => {
+        const ct = r.headers.get('Content-Type') || '';
+        if (ct.includes('application/json')) {
+          try { const json = await r.json(); return { ok: r.ok, json, raw: json, text: null }; } catch(e){ return { ok:r.ok, json:null, raw:null, text: await r.text() }; }
+        }
+        const text = await r.text();
+        return { ok: r.ok, json: null, raw: text, text };
+      });
+  }
+
+  // JSON POST helper (canonical going forward)
+  function postJson(url, payload={}) {
+    const csrf = getCsrf();
+    const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+    if (csrf) headers[csrf.header] = csrf.token;
+    return fetch(url, { method:'POST', headers, body: JSON.stringify(payload) })
+      .then(async r => {
+        let data = null;
+        try { data = await r.json(); } catch(_){ /* ignore parse errors */ }
+        return { ok: r.ok, json: data };
+      });
   }
 
   /* ------------------ NOTIFICATIONS ------------------ */
@@ -86,58 +108,75 @@
 
   /* ------------------ POLLER ------------------ */
   class Poller {
-    constructor({ url, interval=5000, onData, onError, autoStart=true, backoff=true, maxInterval=60000 }) {
-      this.url = url;
+    constructor({ url, interval=5000, onData, onError, autoStart=true, backoff=true, maxInterval=60000, jitter=0.15 }) {
+      this.url = url; // can be string or function returning string
       this.interval = interval;
+      this.baseInterval = interval;
       this.currentInterval = interval;
       this.onData = onData;
       this.onError = onError;
       this.backoff = backoff;
       this.maxInterval = maxInterval;
+      this.jitter = jitter;
       this.timer = null;
       this.active = false;
       this.failCount = 0;
-
+      this.lastSuccess = 0;
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) this.stop();
-        else if (this.active) this.start();
+        else if (!this.active) this.start();
       });
-
       if (autoStart) this.start();
     }
     start() {
       if (this.active) return;
       this.active = true;
-      this.currentInterval = this.interval;
+      this.currentInterval = this.baseInterval;
       this._tick();
     }
     stop() {
       this.active = false;
       clearTimeout(this.timer);
     }
+    _computeDelay() {
+      const jitterAmount = this.currentInterval * this.jitter;
+      return this.currentInterval + (Math.random()*jitterAmount - jitterAmount/2);
+    }
     _schedule() {
-      this.timer = setTimeout(() => this._tick(), this.currentInterval);
+      if (!this.active) return;
+      const delay = this._computeDelay();
+      this.timer = setTimeout(() => this._tick(), delay);
+    }
+    _resolveUrl() {
+      return (typeof this.url === 'function') ? this.url() : this.url;
     }
     _tick() {
       if (!this.active) return;
-      fetch(this.url, { headers: { 'Accept':'application/json' } })
+      const u = this._resolveUrl();
+      fetch(u, { headers: { 'Accept':'application/json' } })
         .then(r => r.json())
         .then(data => {
           this.failCount = 0;
-            this.currentInterval = this.interval; // reset
+          this.currentInterval = this.baseInterval;
+          this.lastSuccess = Date.now();
           this.onData?.(data);
-          this._schedule();
         })
         .catch(err => {
           this.failCount++;
           if (this.backoff) {
-            this.currentInterval = Math.min(this.interval * Math.pow(2, this.failCount), this.maxInterval);
+            this.currentInterval = Math.min(this.baseInterval * Math.pow(2, this.failCount), this.maxInterval);
           }
           this.onError?.(err);
-          this._schedule();
-        });
+        })
+        .finally(() => this._schedule());
     }
   }
+
+  // Real-time coordination state
+  const realTimeState = {
+    lastActivity: Date.now(),
+    ws: { connected: false, reconnects: 0, client: null }
+  };
 
   /* ------------------ DASHBOARD PAGE ------------------ */
   const DashboardPage = (() => {
@@ -153,7 +192,9 @@
         onError: () => {}
       });
     }
-    function handleData(data) {
+    function handleData(resp) {
+      const data = resp && resp.data ? resp.data : resp; // unwrap ApiResponse
+      if (!data) return;
       if (data.timestamp) lastChecked = data.timestamp;
       if (data.hasNewMessages && data.newMessageCount > 0) {
         notifyNewMessages(data.newMessageCount);
@@ -186,16 +227,22 @@
       justSent: false
     };
     let els = {};
-    let polling;
+    let messagesPoller = null;
     function init() {
       if (!qs('[data-page="messages"]')) return;
       cache();
       bind();
       state.lastChecked = new Date().toISOString();
-      // initial silent poll then start
-      fetchUpdates(true).finally(() => {
+      // initial fetch, then start Poller
+      fetchOnce(true).finally(() => {
         selectFirst();
-        startPolling();
+        startPoller();
+      });
+      // Safety: visibility resume if poller somehow inactive
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && messagesPoller && !messagesPoller.active) {
+          messagesPoller.start();
+        }
       });
     }
     function cache() {
@@ -226,48 +273,83 @@
         els.search.addEventListener('input', debounce(filterCustomers, 180));
       }
     }
-    function startPolling() {
-      polling = new Poller({
+    function startPoller() {
+      messagesPoller = new Poller({
         url: () => `/admin/check-new-messages?lastChecked=${encodeURIComponent(state.lastChecked)}`,
-        // allow passing function; adapt Poller:
+        interval: 4000,
+        backoff: true,
+        maxInterval: 30000,
+        onData: handlePollData,
+        onError: () => {},
+        autoStart: true
       });
     }
-    // adapt Poller to allow function url
-    // (Monkey patch: instantiate new Poller each cycle)
-    function fetchUpdates(silent=false) {
+
+    function fetchOnce(silent=false) {
       return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(state.lastChecked)}`)
-        .then(r=>r.json())
-        .then(data => {
-          if (data.timestamp) state.lastChecked = data.timestamp;
-          if (data.customers) {
-            state.customers = data.customers;
-            refreshCustomerList();
-          }
-          if (data.hasNewMessages && data.newMessageCount > 0 && !silent && !state.justSent) {
-            Toast.show(`${data.newMessageCount} new message${data.newMessageCount>1?'s':''}`, 'success', {
-              icon:'<i class="fas fa-comments"></i>',
-              timeout:6000
-            }).addEventListener('click', ()=> window.location.reload());
-          }
-          if (state.currentCustomerId) {
-            const current = state.customers.find(c => c.customerId === state.currentCustomerId);
-            if (current) renderMessages(current);
-          }
-        })
-        .catch(err => {
-          if (!silent) console.error(err);
-        });
+        .then(r => r.json())
+        .then(resp => handlePollData(resp, silent))
+        .catch(err => { if (!silent) console.error(err); });
     }
-    // Re-implement polling with manual loop to allow dynamic URL
-    function startPolling() {
-      function loop() {
-        fetchUpdates(true).finally(() => {
-          setTimeout(() => {
-            if (!document.hidden) loop();
-          }, 3000);
+
+    function handlePollData(resp, silent=false) {
+      const data = resp && resp.data ? resp.data : resp;
+      if (!data) return;
+      if (data.timestamp) state.lastChecked = data.timestamp;
+      if (data.customers) {
+        // Merge customers incrementally to allow message append without full re-render
+        let listChanged = false;
+        data.customers.forEach(incoming => {
+          const idx = state.customers.findIndex(c => c.customerId === incoming.customerId);
+          if (idx === -1) {
+            // New conversation entirely
+            state.customers.push(incoming);
+            listChanged = true;
+          } else {
+            const existing = state.customers[idx];
+            // Detect new messages by length difference (server returns ordered, complete history)
+            const oldLen = (existing.messages || []).length;
+            const newLen = (incoming.messages || []).length;
+            if (newLen > oldLen) {
+              const newMessages = incoming.messages.slice(oldLen);
+              // Update stored messages
+              existing.messages = existing.messages ? existing.messages.concat(newMessages) : incoming.messages;
+              // If this is the currently open chat, append only new messages to DOM
+              if (existing.customerId === state.currentCustomerId) {
+                appendMessages(existing, newMessages);
+              }
+              listChanged = true; // last preview + time changed
+            } else if (newLen < oldLen) {
+              // Fallback: server trimmed or reset (rare) -> replace & full re-render if active
+              existing.messages = incoming.messages;
+              if (existing.customerId === state.currentCustomerId) {
+                renderMessages(existing, { force:true });
+              }
+              listChanged = true;
+            } else {
+              // same length, but we might want to carry over any metadata updates (e.g., name/phone changes)
+              existing.name = incoming.name;
+              existing.phone = incoming.phone;
+            }
+          }
         });
+        if (listChanged) refreshCustomerList();
       }
-      loop();
+      if (data.hasNewMessages && data.newMessageCount > 0 && !silent && !state.justSent) {
+        Toast.show(`${data.newMessageCount} new message${data.newMessageCount>1?'s':''}`, 'success', {
+          icon:'<i class="fas fa-comments"></i>', timeout:6000
+        }).addEventListener('click', ()=> window.location.reload());
+      }
+      if (state.currentCustomerId) {
+        const current = state.customers.find(c => c.customerId === state.currentCustomerId);
+        if (current) {
+          // If no chat-messages wrapper exists (initial or forced), render fully
+            const wrap = els.messages?.querySelector('.chat-messages');
+            if (!wrap) {
+              renderMessages(current, { force:true });
+            }
+        }
+      }
     }
 
     function refreshCustomerList() {
@@ -345,10 +427,9 @@
       els.avatar.textContent = (customer.name||'U').substring(0,1).toUpperCase();
     }
 
-    function renderMessages(customer) {
+    function renderMessages(customer, { force=false } = {}) {
       if (!els.messages) return;
       const container = els.messages;
-      container.innerHTML = '';
       if (!customer.messages || customer.messages.length === 0) {
         container.innerHTML = `
           <div class="empty-state" style="min-height:240px;padding:2rem 1rem;">
@@ -357,20 +438,43 @@
           </div>`;
         return;
       }
+      container.innerHTML = '';
       const wrap = document.createElement('div');
       wrap.className='chat-messages';
-      customer.messages.forEach(m => {
-        const bub = document.createElement('div');
-        bub.className = 'message-bubble ' + (m.from === 'customer' ? 'message-customer' : 'message-admin');
-        const time = new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        bub.innerHTML = `
-          <div class="message-sender">${m.from === 'admin' ? 'You' : escapeHtml(customer.name || 'Customer')}</div>
-          <div class="message-text">${escapeHtml(m.text)}</div>
-          <div class="message-time">${time}</div>`;
-        wrap.appendChild(bub);
-      });
+      customer.messages.forEach(m => wrap.appendChild(buildBubble(customer, m)));
       container.appendChild(wrap);
       container.scrollTop = container.scrollHeight;
+    }
+
+    function buildBubble(customer, m) {
+      const bub = document.createElement('div');
+      bub.className = 'message-bubble ' + (m.from === 'customer' ? 'message-customer' : 'message-admin');
+      const time = new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      bub.innerHTML = `
+        <div class="message-sender">${m.from === 'admin' ? 'You' : escapeHtml(customer.name || 'Customer')}</div>
+        <div class="message-text">${escapeHtml(m.text)}</div>
+        <div class="message-time">${time}</div>`;
+      return bub;
+    }
+
+    function appendMessages(customer, newMessages) {
+      if (!els.messages || !newMessages || newMessages.length === 0) return;
+      const container = els.messages;
+      let wrap = container.querySelector('.chat-messages');
+      if (!wrap) {
+        // Fallback: full render if wrapper missing
+        renderMessages(customer, { force:true });
+        return;
+      }
+      const atBottom = isNearBottom(container);
+      newMessages.forEach(m => wrap.appendChild(buildBubble(customer, m)));
+      if (atBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function isNearBottom(scroller, threshold=40) {
+      return (scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight) < threshold;
     }
 
     function filterCustomers() {
@@ -390,13 +494,10 @@
       }
       els.sendBtn.disabled = true;
       els.sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-      postForm('/admin/send-message', {
-        customerId: state.currentCustomerId,
-        message: val
-      })
-      .then(r => r.text())
-      .then(t => {
-        if (t === 'success') {
+      postJson('/admin/send-message', { customerId: state.currentCustomerId, message: val })
+      .then(res => {
+        const success = !!(res.json && res.json.success);
+        if (success) {
           state.justSent = true;
           els.replyInput.value = '';
           // Add to current chat quickly
@@ -415,7 +516,8 @@
             state.justSent = false;
           }, 2000);
         } else {
-          Toast.show('Failed to send message', 'danger');
+          const errMsg = (res.json && (res.json.message || res.json.error)) || 'Failed to send message';
+          Toast.show(errMsg, 'danger');
         }
       })
       .catch(()=> Toast.show('Error sending message','danger'))
@@ -543,16 +645,17 @@
       const customerId = selectEl.getAttribute('data-customer-id');
       const status = selectEl.value;
       selectEl.disabled = true;
-      postForm('/admin/update-status', { customerId, status })
-        .then(r => r.text())
-        .then(t => {
-          if (t === 'success') {
+      postJson('/admin/update-status', { customerId, status })
+        .then(res => {
+          const success = !!(res.json && res.json.success);
+          if (success) {
             updateBadge(selectEl, status);
             recalcStats();
             flash(selectEl.closest('.repair-card'));
             Toast.show('Status updated','success',{timeout:2500});
           } else {
-            Toast.show('Update failed','danger');
+            const errMsg = (res.json && (res.json.message || res.json.error)) || 'Update failed';
+            Toast.show(errMsg,'danger');
           }
         })
         .catch(()=> Toast.show('Error updating','danger'))
@@ -608,10 +711,11 @@
         const customerId = selectEl.getAttribute('data-customer-id');
         const status = selectEl.value;
         selectEl.disabled = true;
-        postForm('/admin/update-status', { customerId, status })
-          .then(r => r.text())
-          .then(t => {
-            if (t === 'success') {
+        const version = selectEl.getAttribute('data-version');
+        postJson('/admin/update-status', { customerId, status, version })
+          .then(res => {
+            const success = !!(res.json && res.json.success);
+            if (success) {
               Toast.show('Status updated','success',{timeout:2000});
               const row = selectEl.closest('tr');
               if (row) {
@@ -619,8 +723,11 @@
                 void row.offsetWidth;
                 row.classList.add('status-updated');
               }
+            } else if (res.json && (res.json.message || res.json.error || '').toLowerCase().includes('modified')) {
+              Toast.show('Version conflict – refresh page','warning');
             } else {
-              Toast.show('Failed to update','danger');
+              const errMsg = (res.json && (res.json.message || res.json.error)) || 'Failed to update';
+              Toast.show(errMsg,'danger');
             }
           })
           .catch(()=> Toast.show('Error updating','danger'))
@@ -649,15 +756,16 @@
       }
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
-      postForm('/admin/send-message', { customerId: currentId, message: val })
-        .then(r=>r.text())
-        .then(t=>{
-          if (t==='success') {
+      postJson('/admin/send-message', { customerId: currentId, message: val })
+        .then(res=>{
+          const success = !!(res.json && res.json.success);
+          if (success) {
             Toast.show('Message sent','success',{timeout:2500});
             area.value='';
             bootstrap.Modal.getInstance(qs('#messageModal')).hide();
           } else {
-            Toast.show('Send failed','danger');
+            const errMsg = (res.json && (res.json.message || res.json.error)) || 'Send failed';
+            Toast.show(errMsg,'danger');
           }
         })
         .catch(()=> Toast.show('Error sending','danger'))
@@ -670,6 +778,7 @@
 
   /* ------------------ BOOTSTRAP ALL ------------------ */
   document.addEventListener('DOMContentLoaded', () => {
+    initWebSocket();
     DashboardPage.init();
     MessagesPage.init();
     CustomersPage.init();
@@ -680,4 +789,85 @@
 
   // Expose for rare debug
   window.Repairo = { Toast, Poller };
+
+  /* ------------------ WEBSOCKET (STOMP) ------------------ */
+  function initWebSocket() {
+    if (typeof Stomp === 'undefined' && !window.Stomp) {
+      loadScript('https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js', () => {
+        loadScript('https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js', connectStompWithRetry);
+      });
+    } else {
+      connectStompWithRetry();
+    }
+  }
+
+  function loadScript(src, cb) {
+    const s = document.createElement('script');
+    s.src = src; s.async = true; s.onload = cb; s.onerror = () => cb && cb();
+    document.head.appendChild(s);
+  }
+
+  function connectStompWithRetry() {
+    if (!window.SockJS || !window.Stomp) return;
+    try {
+      const sock = new SockJS('/ws');
+      const client = Stomp.over(sock);
+      client.debug = () => {};
+      // heartbeats (ms)
+      client.heartbeat.incoming = 10000;
+      client.heartbeat.outgoing = 10000;
+      client.connect({}, () => {
+        realTimeState.ws.connected = true;
+        realTimeState.ws.reconnects = 0;
+        realTimeState.ws.client = client;
+        realTimeState.lastActivity = Date.now();
+        client.subscribe('/topic/admin/new-messages', frame => { safeHandleWs(frame); });
+        client.subscribe('/topic/admin/status-updates', frame => { safeHandleWs(frame); });
+      }, () => {
+        realTimeState.ws.connected = false;
+        scheduleWsReconnect();
+      });
+    } catch(e) {
+      realTimeState.ws.connected = false;
+      scheduleWsReconnect();
+    }
+  }
+
+  function safeHandleWs(frame) {
+    try { handleWsEvent(JSON.parse(frame.body)); } catch(_){}
+    realTimeState.lastActivity = Date.now();
+  }
+
+  function scheduleWsReconnect() {
+    realTimeState.ws.reconnects++;
+    const delay = Math.min(30000, Math.pow(2, realTimeState.ws.reconnects) * 1000);
+    setTimeout(() => connectStompWithRetry(), delay);
+  }
+
+  function handleWsEvent(evt) {
+    if (!evt || !evt.type) return;
+    if (evt.type === 'NEW_MESSAGE') {
+      Toast.show('New message received', 'success', { timeout:4000, icon:'<i class="fas fa-comments"></i>' });
+    } else if (evt.type === 'STATUS_CHANGE') {
+      // Optionally reflect status change if element present
+      const sel = document.querySelector(`[data-customer-id="${evt.customerId}"]`);
+      if (sel && sel.tagName === 'SELECT') {
+        sel.value = evt.newStatus;
+      }
+    }
+    realTimeState.lastActivity = Date.now();
+  }
+
+  // Watchdog to ensure polling resumes if WebSocket silent
+  setInterval(() => {
+    const now = Date.now();
+    const idle = now - realTimeState.lastActivity;
+    // If idle > 20s and WS not connected, we could trigger a manual poll (dashboard & messages already have loops)
+    if (idle > 20000 && !realTimeState.ws.connected) {
+      // Trigger a lightweight hidden fetch to keep things alive (dashboard check)
+      fetch('/admin/check-new-messages?lastChecked=' + encodeURIComponent(new Date(Date.now()-60000).toISOString()), { headers: { 'Accept':'application/json' } })
+        .then(r=>r.json()).then(()=>{ realTimeState.lastActivity = Date.now(); })
+        .catch(()=>{});
+    }
+  }, 15000);
 })();

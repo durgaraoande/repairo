@@ -1,15 +1,20 @@
 package com.repairo.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "customers")
-public class Customer {
+public class Customer implements Persistable<String> {
     @Id
     private String customerId;
+    
+    @Version
+    private Long version;
     
     // Plaintext fields for filtering and display
     private String name;
@@ -34,6 +39,9 @@ public class Customer {
     // Getters and setters
     public String getCustomerId() { return customerId; }
     public void setCustomerId(String customerId) { this.customerId = customerId; }
+    
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -65,5 +73,17 @@ public class Customer {
         }
         this.messages.add(message);
         this.lastInteraction = LocalDateTime.now();
+    }
+
+    // Persistable implementation
+    @Override
+    public String getId() {
+        return this.customerId;
+    }
+
+    @Override
+    public boolean isNew() {
+        // Consider entity new only if id is null
+        return this.customerId == null;
     }
 }

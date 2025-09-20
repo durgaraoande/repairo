@@ -21,6 +21,15 @@ server:
 app:
   encryption:
     key: ${ENCRYPTION_KEY:defaultDevKey1234567890}
+  security:
+    admin:
+      username: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:admin}
+      enabled: true
+    # Alternative: load users from database
+    # users:
+    #   source: database # or properties
+    #   table: users # if database source
 
 # WhatsApp Configuration
 whatsapp:
