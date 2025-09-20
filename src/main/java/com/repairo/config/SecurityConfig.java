@@ -20,7 +20,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/webhook/**", "/api/**")
+                .ignoringRequestMatchers("/webhook/**", "/api/**", "/admin/send-message", "/admin/update-status", "/admin/check-new-messages")
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").authenticated()

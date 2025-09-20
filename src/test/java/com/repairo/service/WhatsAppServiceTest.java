@@ -1,43 +1,144 @@
 package com.repairo.service;
 
-import com.repairo.config.MongoEncryptionConfig;
-import com.repairo.model.Customer;
-import com.repairo.model.RepairStatus;
-import com.repairo.repository.CustomerRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.Optional;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class WhatsAppServiceTest {
 
-    private final CustomerRepository customerRepository = Mockito.mock(CustomerRepository.class);
-    private final MongoEncryptionConfig encryptionConfig = new MongoEncryptionConfig();
-    private final WhatsAppService whatsAppService = new WhatsAppService();
+    @Mock
+    private RestTemplate restTemplate;
 
-    @Test
-    void testHandleIncomingMessage_NewCustomer() {
-        when(customerRepository.findByPhone(any())).thenReturn(Optional.empty());
+    @InjectMocks
+    private WhatsAppService whatsAppService;
 
-        String payload = "{\"phone\":\"1234567890\",\"text\":\"Hi\"}";
-        whatsAppService.handleIncomingMessage(payload);
+    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
+    private final PrintStream originalErr = System.err;
 
-        verify(customerRepository).save(any(Customer.class));
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(whatsAppService, "accessToken", "test_token");
+        ReflectionTestUtils.setField(whatsAppService, "phoneNumberId", "test_phone_id");
+        ReflectionTestUtils.setField(whatsAppService, "restTemplate", restTemplate);
+        
+        System.setOut(new PrintStream(outputStream));
+        System.setErr(new PrintStream(errorStream));
     }
 
     @Test
-    void testHandleAutoReply() {
-        Customer customer = new Customer();
-        customer.setRepairStatus(RepairStatus.PENDING);
+    void testHandleIncomingMessage() {
+        // Given
+        String phoneNumber = "1234567890";
+        String messageText = "Hi";
+        
+        // When
+        whatsAppService.handleIncomingMessage(phoneNumber, messageText);
 
-        when(customerRepository.findByPhone(any())).thenReturn(Optional.of(customer));
+        // Then
+        String output = outputStream.toString();
+        assertTrue(output.contains("Received message from " + phoneNumber + ": " + messageText));
+    }
 
-        String payload = "{\"phone\":\"1234567890\",\"text\":\"status\"}";
-        whatsAppService.handleIncomingMessage(payload);
+    @Test
+    void testHandleIncomingMessage_EmptyMessage() {
+        // Given
+        String phoneNumber = "1234567890";
+        String messageText = "";
+        
+        // When
+        whatsAppService.handleIncomingMessage(phoneNumber, messageText);
 
-        verify(customerRepository).save(customer);
+        // Then
+        String output = outputStream.toString();
+        assertTrue(output.contains("Received message from " + phoneNumber + ": " + messageText));
+    }
+
+    @Test
+    void testHandleIncomingMessage_NullMessage() {
+        // Given
+        String phoneNumber = "1234567890";
+        String messageText = null;
+        
+        // When
+        whatsAppService.handleIncomingMessage(phoneNumber, messageText);
+
+        // Then
+        String output = outputStream.toString();
+        assertTrue(output.contains("Received message from " + phoneNumber + ": " + messageText));
+    }
+
+    @Test
+    void testSendMessage_Success() {
+        // Given
+        String phoneNumber = "1234567890";
+        String message = "Hello from service";
+        when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>("Success", HttpStatus.OK));
+
+        // When
+        whatsAppService.sendMessage(phoneNumber, message);
+
+        // Then
+        verify(restTemplate).postForEntity(
+                eq("https://graph.facebook.com/v18.0/test_phone_id/messages"),
+                any(HttpEntity.class),
+                eq(String.class)
+        );
+    }
+
+    @Test
+    void testSendMessage_WithQuotes() {
+        // Given
+        String phoneNumber = "1234567890";
+        String message = "Message with \"quotes\"";
+        when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(new ResponseEntity<>("Success", HttpStatus.OK));
+
+        // When
+        whatsAppService.sendMessage(phoneNumber, message);
+
+        // Then
+        verify(restTemplate).postForEntity(anyString(), any(HttpEntity.class), eq(String.class));
+    }
+
+    @Test
+    void testSendMessage_Exception() {
+        // Given
+        String phoneNumber = "1234567890";
+        String message = "Test message";
+        when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenThrow(new RuntimeException("Network error"));
+
+        // When
+        whatsAppService.sendMessage(phoneNumber, message);
+
+        // Then
+        String errorOutput = errorStream.toString();
+        assertTrue(errorOutput.contains("Failed to send WhatsApp message"));
+    }
+
+    @Test
+    void tearDown() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
     }
 }

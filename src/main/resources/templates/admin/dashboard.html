@@ -3,165 +3,523 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repairo - Admin Dashboard</title>
+    <title>Dashboard - Repairo Admin</title>
+    
+    <!-- Core CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSRF Token for AJAX -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-dark: #3730a3;
+            --secondary-color: #6b7280;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-bg);
+            color: #1f2937;
+            font-size: 14px;
+        }
+        
+        /* Header */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: none;
+            padding: 0.75rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        /* Navigation Tabs */
+        .nav-tabs-container {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 0;
+            color: var(--secondary-color);
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+            border-color: transparent;
+            background: #f9fafb;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background: white;
+            border-color: transparent transparent var(--primary-color) transparent;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        /* Page Content */
+        .page-header {
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: var(--secondary-color);
+            font-size: 1rem;
+        }
+        
+        /* Cards */
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .stats-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stats-number {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stats-label {
+            color: var(--secondary-color);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .stats-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stats-customers { color: var(--info-color); }
+        .stats-customers .stats-icon { background: #dbeafe; color: var(--info-color); }
+        
+        .stats-repairs { color: var(--warning-color); }
+        .stats-repairs .stats-icon { background: #fef3c7; color: var(--warning-color); }
+        
+        .stats-messages { color: var(--danger-color); }
+        .stats-messages .stats-icon { background: #fee2e2; color: var(--danger-color); }
+        
+        .stats-completed { color: var(--success-color); }
+        .stats-completed .stats-icon { background: #d1fae5; color: var(--success-color); }
+        
+        /* Status badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .status-pending { background: #f3f4f6; color: #6b7280; }
+        .status-in-progress { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        
+        /* Table */
+        .table th {
+            background: #f9fafb;
+            border-top: none;
+            border-bottom: 1px solid #e5e7eb;
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+        }
+        
+        .table td {
+            border-color: #f3f4f6;
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #fafbfc;
+        }
+        
+        .customer-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        .customer-phone {
+            color: var(--secondary-color);
+            font-size: 0.875rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.5rem;
+            }
+            
+            .stats-number {
+                font-size: 1.875rem;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-mobile-alt me-2"></i>Repairo Admin
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-mobile-alt me-2"></i>Repairo
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="/logout">
-                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
         </div>
     </nav>
 
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs-container">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="/admin/dashboard">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/customers">
+                    <i class="fas fa-users me-2"></i>Customers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/messages">
+                    <i class="fas fa-comments me-2"></i>Messages
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/repairs">
+                    <i class="fas fa-tools me-2"></i>Repairs
+                </a>
+            </li>
+        </ul>
+    </div>
+
     <!-- Main Content -->
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2">
-                <div class="list-group">
-                    <a href="/admin/dashboard" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                    </a>
-                    <a href="/admin/customers" class="list-group-item list-group-item-action">
-                        <i class="fas fa-users me-2"></i>Customers
-                    </a>
-                    <a href="/admin/messages" class="list-group-item list-group-item-action">
-                        <i class="fas fa-comments me-2"></i>Messages
-                    </a>
-                    <a href="/admin/repairs" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tools me-2"></i>Repairs
-                    </a>
+    <div class="container-fluid px-4 pb-4">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Welcome back! Here's what's happening with your repair business today.</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-5">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-customers">
+                    <div class="card-body p-4">
+                        <div class="stats-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-number" th:text="${totalCustomers ?: 0}">0</div>
+                        <div class="stats-label">Total Customers</div>
+                    </div>
                 </div>
             </div>
-
-            <!-- Main Dashboard -->
-            <div class="col-md-9 col-lg-10">
-                <!-- Stats Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${totalCustomers ?: 0}">0</h4>
-                                        <p class="card-text">Total Customers</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-users fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-repairs">
+                    <div class="card-body p-4">
+                        <div class="stats-icon">
+                            <i class="fas fa-tools"></i>
                         </div>
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${activeRepairs ?: 0}">0</h4>
-                                        <p class="card-text">Active Repairs</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-tools fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <div class="card bg-warning text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${pendingMessages ?: 0}">0</h4>
-                                        <p class="card-text">Pending Messages</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-envelope fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3">
-                        <div class="card bg-info text-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${completedToday ?: 0}">0</h4>
-                                        <p class="card-text">Completed Today</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-check-circle fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="stats-number" th:text="${activeRepairs ?: 0}">0</div>
+                        <div class="stats-label">Active Repairs</div>
                     </div>
                 </div>
-
-                <!-- Recent Activity -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-clock me-2"></i>Recent Customers
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Phone Model</th>
-                                        <th>Status</th>
-                                        <th>Last Interaction</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:if="${#lists.isEmpty(recentCustomers)}">
-                                        <td colspan="5" class="text-center text-muted">
-                                            No recent customers. WhatsApp integration ready for messages!
-                                        </td>
-                                    </tr>
-                                    <tr th:each="customer : ${recentCustomers}">
-                                        <td th:text="${customer.name ?: 'Unknown'}">Unknown</td>
-                                        <td th:text="${customer.phoneModel ?: 'N/A'}">N/A</td>
-                                        <td>
-                                            <span class="badge bg-secondary" th:text="${customer.repairStatus}" 
-                                                  th:classappend="${customer.repairStatus == T(com.repairo.model.RepairStatus).COMPLETED} ? 'bg-success' : 
-                                                                 (${customer.repairStatus == T(com.repairo.model.RepairStatus).IN_PROGRESS} ? 'bg-warning' : 'bg-secondary')}">
-                                            </span>
-                                        </td>
-                                        <td th:text="${#temporals.format(customer.lastInteraction, 'yyyy-MM-dd HH:mm')}">Recently</td>
-                                        <td>
-                                            <a th:href="@{/admin/customers(search=${customer.name})}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-messages">
+                    <div class="card-body p-4">
+                        <div class="stats-icon">
+                            <i class="fas fa-envelope"></i>
                         </div>
+                        <div class="stats-number" th:text="${pendingMessages ?: 0}">0</div>
+                        <div class="stats-label">Pending Messages</div>
                     </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-completed">
+                    <div class="card-body p-4">
+                        <div class="stats-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stats-number" th:text="${completedToday ?: 0}">0</div>
+                        <div class="stats-label">Completed Today</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-clock me-2"></i>Recent Customer Activity
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Device</th>
+                                <th>Status</th>
+                                <th>Last Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(recentCustomers)}">
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="fas fa-clock mb-3" style="font-size: 2rem; opacity: 0.3;"></i>
+                                    <div>No recent activity to display</div>
+                                </td>
+                            </tr>
+                            <tr th:each="customer : ${recentCustomers}" th:if="${!#lists.isEmpty(recentCustomers)}">
+                                <td>
+                                    <div class="customer-name" th:text="${customer.name ?: 'Unknown Customer'}">Unknown Customer</div>
+                                    <div class="customer-phone" th:text="${customer.phone ?: 'No phone'}">No phone</div>
+                                </td>
+                                <td>
+                                    <span th:text="${customer.phoneModel ?: 'Unknown Model'}" class="text-muted">Unknown Model</span>
+                                </td>
+                                <td>
+                                    <span th:switch="${customer.repairStatus}" class="status-badge">
+                                        <span th:case="'PENDING'" class="status-pending">Pending</span>
+                                        <span th:case="'IN_PROGRESS'" class="status-in-progress">In Progress</span>
+                                        <span th:case="'COMPLETED'" class="status-completed">Completed</span>
+                                        <span th:case="*" class="status-pending">Unknown</span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:text="${#temporals.format(customer.lastInteraction, 'MMM dd, HH:mm')}" class="text-muted">Recently</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-update functionality for dashboard
+        let lastChecked = new Date().toISOString();
+        let pollingInterval;
+        let isPolling = false;
+        
+        function startDashboardPolling() {
+            if (isPolling) return;
+            
+            isPolling = true;
+            pollingInterval = setInterval(checkForUpdates, 10000); // Check every 10 seconds
+            console.log('Started dashboard polling');
+        }
+        
+        function stopDashboardPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                isPolling = false;
+                console.log('Stopped dashboard polling');
+            }
+        }
+        
+        function checkForUpdates() {
+            console.log('Dashboard checking for updates...');
+            fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Dashboard polling response:', data);
+                    
+                    if (data.success) {
+                        if (data.hasNewMessages && data.newMessageCount > 0) {
+                            console.log(`Dashboard: Found ${data.newMessageCount} new messages`);
+                            
+                            // Show notification
+                            showNewMessageNotification(data.newMessageCount);
+                            
+                            // Update statistics if needed
+                            updateDashboardStats(data);
+                        }
+                        
+                        // Always update last checked timestamp
+                        if (data.timestamp) {
+                            lastChecked = data.timestamp;
+                        }
+                    } else {
+                        console.error('Dashboard polling failed:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Dashboard: Error checking for updates:', error);
+                });
+        }
+        
+        function showNewMessageNotification(count) {
+            // Create notification banner at top of dashboard
+            let banner = document.querySelector('.new-message-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.className = 'new-message-banner';
+                banner.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    color: white;
+                    padding: 0.75rem;
+                    text-align: center;
+                    z-index: 1060;
+                    font-weight: 500;
+                    cursor: pointer;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                `;
+                
+                // Insert at top of body
+                document.body.insertBefore(banner, document.body.firstChild);
+                
+                // Adjust body padding to account for banner
+                document.body.style.paddingTop = '50px';
+                
+                // Click to go to messages page
+                banner.addEventListener('click', () => {
+                    window.location.href = '/admin/messages';
+                });
+                
+                // Auto-hide after 15 seconds
+                setTimeout(() => {
+                    if (banner && banner.parentNode) {
+                        banner.style.transform = 'translateY(-100%)';
+                        document.body.style.paddingTop = '0';
+                        setTimeout(() => banner.remove(), 300);
+                    }
+                }, 15000);
+            }
+            
+            banner.innerHTML = `
+                <i class="fas fa-comments me-2"></i>
+                ${count} new message${count > 1 ? 's' : ''} received! 
+                <strong>Click here to view</strong>
+                <i class="fas fa-arrow-right ms-2"></i>
+            `;
+            banner.style.transform = 'translateY(0)';
+        }
+        
+        function updateDashboardStats(data) {
+            // Update pending messages count if element exists
+            const pendingElement = document.querySelector('.stats-messages .stats-number');
+            if (pendingElement && data.newMessageCount) {
+                const currentCount = parseInt(pendingElement.textContent) || 0;
+                pendingElement.textContent = currentCount + data.newMessageCount;
+                
+                // Add subtle animation to highlight the change
+                pendingElement.style.color = '#10b981';
+                setTimeout(() => {
+                    pendingElement.style.color = '';
+                }, 2000);
+            }
+        }
+        
+        // Start polling when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startDashboardPolling();
+        });
+        
+        // Stop polling when page is hidden/user switches tabs
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopDashboardPolling();
+            } else {
+                startDashboardPolling();
+            }
+        });
+        
+        // Stop polling when user leaves the page
+        window.addEventListener('beforeunload', function() {
+            stopDashboardPolling();
+        });
+    </script>
 </body>
 </html>

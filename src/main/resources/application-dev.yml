@@ -13,7 +13,7 @@ spring:
 whatsapp:
   webhook:
     verify:
-      token: dev_webhook_token_123
+      token: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
 
 logging:
   level:

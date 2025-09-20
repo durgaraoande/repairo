@@ -5,50 +5,311 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Repairo - Admin Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: white; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        :root {
+            --primary-color: #4f46e5;
+            --primary-dark: #3730a3;
+            --secondary-color: #6b7280;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            opacity: 0.95;
+        }
+        
+        .login-container { 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            padding: 2rem 1rem;
+        }
+        
+        .login-card { 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .brand-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .brand-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 16px -4px rgba(79, 70, 229, 0.4);
+        }
+        
+        .brand-title {
+            color: #1f2937;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .brand-subtitle {
+            color: var(--secondary-color);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-control {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background-color: #fafbfc;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background-color: white;
+        }
+        
+        .form-floating > label {
+            color: var(--secondary-color);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .login-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(79, 70, 229, 0.4);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+        }
+        
+        .credentials-hint {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid #e0f2fe;
+        }
+        
+        .credentials-hint .hint-title {
+            color: #0369a1;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .credentials-hint .hint-content {
+            color: #075985;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 15%;
+            animation-delay: 4s;
+        }
+        
+        .shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            bottom: 10%;
+            right: 20%;
+            animation-delay: 1s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 1rem;
+            }
+            
+            .login-card {
+                border-radius: 20px;
+                margin: 0.5rem;
+            }
+            
+            .brand-title {
+                font-size: 1.75rem;
+            }
+            
+            .brand-icon {
+                width: 64px;
+                height: 64px;
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
     <div class="login-container">
-        <div class="col-md-4">
-            <div class="login-card p-5">
-                <div class="text-center mb-4">
-                    <h2 class="text-primary">📱 Repairo</h2>
-                    <p class="text-muted">Admin Dashboard Login</p>
+        <div class="login-card p-5">
+            <div class="brand-section">
+                <div class="brand-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h1 class="brand-title">Repairo</h1>
+                <p class="brand-subtitle">Admin Dashboard</p>
+            </div>
+            
+            <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Invalid username or password.
+            </div>
+            
+            <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                You have been logged out successfully.
+            </div>
+            
+            <form th:action="@{/login}" method="post">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="username" name="username" required 
+                           placeholder="Username">
+                    <label for="username">
+                        <i class="fas fa-user me-2"></i>Username
+                    </label>
                 </div>
                 
-                <div th:if="${param.error}" class="alert alert-danger" role="alert">
-                    Invalid username or password.
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="password" name="password" required 
+                           placeholder="Password">
+                    <label for="password">
+                        <i class="fas fa-lock me-2"></i>Password
+                    </label>
                 </div>
                 
-                <div th:if="${param.logout}" class="alert alert-success" role="alert">
-                    You have been logged out successfully.
+                <button type="submit" class="btn btn-primary login-btn">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                </button>
+            </form>
+            
+            <div class="credentials-hint">
+                <div class="hint-title">Default Credentials</div>
+                <div class="hint-content">
+                    <strong>Username:</strong> admin<br>
+                    <strong>Password:</strong> admin
                 </div>
-                
-                <form th:action="@{/login}" method="post">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required 
-                               placeholder="Default: admin">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required 
-                               placeholder="Default: admin">
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
-                    
-                    <div class="text-center">
-                        <small class="text-muted">
-                            Default credentials: <strong>admin / admin</strong>
-                        </small>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

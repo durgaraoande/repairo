@@ -60,6 +60,9 @@ public class Customer {
     public void setLastInteraction(LocalDateTime lastInteraction) { this.lastInteraction = lastInteraction; }
     
     public void addMessage(Message message) {
+        if (this.messages == null) {
+            this.messages = new ArrayList<>();
+        }
         this.messages.add(message);
         this.lastInteraction = LocalDateTime.now();
     }

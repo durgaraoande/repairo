@@ -351,26 +351,12 @@
     <script>
         let currentCustomerId = null;
 
-        // Function to get CSRF token from cookie
-        function getCsrfToken() {
-            const name = 'XSRF-TOKEN=';
-            const decodedCookie = decodeURIComponent(document.cookie);
-            const ca = decodedCookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') {
-                    c = c.substring(1);
-                }
-                if (c.indexOf(name) == 0) {
-                    return c.substring(name.length, c.length);
-                }
-            }
-            return '';
-        }
-
         function updateStatus(selectElement) {
             const customerId = selectElement.getAttribute('data-customer-id');
             const status = selectElement.value;
+            
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
             
             // Add loading state
             selectElement.disabled = true;
@@ -378,9 +364,9 @@
             fetch('/admin/update-status', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `customerId=${customerId}&status=${status}`
+                body: `customerId=${customerId}&status=${status}&_csrf=${csrfToken}`
             })
             .then(response => response.text())
             .then(data => {
@@ -418,12 +404,15 @@
             sendButton.disabled = true;
             sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
             
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            
             fetch('/admin/send-message', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `customerId=${currentCustomerId}&message=${encodeURIComponent(message)}`
+                body: `customerId=${currentCustomerId}&message=${encodeURIComponent(message)}&_csrf=${csrfToken}`
             })
             .then(response => response.text())
             .then(data => {

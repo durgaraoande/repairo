@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repairo - Error</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-dark: #3730a3;
+            --secondary-color: #6b7280;
+            --error-color: #dc2626;
+            --warning-color: #f59e0b;
+            --success-color: #10b981;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            margin: 0;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            opacity: 0.95;
+        }
+        
+        .error-container { 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            padding: 2rem 1rem;
+        }
+        
+        .error-card { 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .error-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+        
+        .error-icon.error-404 {
+            background: linear-gradient(135deg, var(--warning-color) 0%, #f97316 100%);
+        }
+        
+        .error-icon.error-500 {
+            background: linear-gradient(135deg, var(--error-color) 0%, #b91c1c 100%);
+        }
+        
+        .error-icon.error-403 {
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+        }
+        
+        .error-icon.error-default {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #4b5563 100%);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(79, 70, 229, 0); }
+        }
+        
+        .error-code {
+            font-size: 6rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            line-height: 1;
+        }
+        
+        .error-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            font-size: 1.125rem;
+            color: var(--secondary-color);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .error-details {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .error-details h5 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .error-details p {
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(79, 70, 229, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--secondary-color);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+        
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 8s ease-in-out infinite;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 15%;
+            animation-delay: 4s;
+        }
+        
+        .shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            bottom: 10%;
+            right: 20%;
+            animation-delay: 1s;
+        }
+        
+        .shape:nth-child(5) {
+            width: 90px;
+            height: 90px;
+            top: 50%;
+            left: 5%;
+            animation-delay: 3s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(90deg); }
+            50% { transform: translateY(-10px) rotate(180deg); }
+            75% { transform: translateY(-30px) rotate(270deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 1rem;
+            }
+            
+            .error-card {
+                border-radius: 20px;
+                margin: 0.5rem;
+            }
+            
+            .error-code {
+                font-size: 4rem;
+            }
+            
+            .error-title {
+                font-size: 1.5rem;
+            }
+            
+            .error-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <div class="error-container">
+        <div class="error-card p-5">
+            <!-- Error Icon with dynamic styling based on error type -->
+            <div th:class="'error-icon error-' + (${status} ?: 'default')">
+                <i th:class="${status == '404'} ? 'fas fa-search' : 
+                             (${status == '500'} ? 'fas fa-exclamation-triangle' : 
+                             (${status == '403'} ? 'fas fa-lock' : 
+                             'fas fa-question-circle'))"></i>
+            </div>
+            
+            <!-- Error Code -->
+            <div class="error-code" th:text="${status} ?: '500'">500</div>
+            
+            <!-- Error Title -->
+            <h1 class="error-title" th:text="${error} ?: 'Internal Server Error'">Internal Server Error</h1>
+            
+            <!-- Error Message -->
+            <p class="error-message">
+                <span th:switch="${status}">
+                    <span th:case="'404'">The page you're looking for doesn't exist or has been moved.</span>
+                    <span th:case="'403'">You don't have permission to access this resource.</span>
+                    <span th:case="'500'">Something went wrong on our end. We're working to fix it.</span>
+                    <span th:case="*">An unexpected error occurred. Please try again later.</span>
+                </span>
+            </p>
+            
+            <!-- Error Details (only show in development/debug mode) -->
+            <div th:if="${message != null or exception != null or trace != null}" class="error-details">
+                <h5><i class="fas fa-info-circle me-2"></i>Technical Details</h5>
+                <p th:if="${message != null}"><strong>Message:</strong> <span th:text="${message}">Error message</span></p>
+                <p th:if="${exception != null}"><strong>Exception:</strong> <span th:text="${exception}">Exception type</span></p>
+                <p th:if="${timestamp != null}"><strong>Timestamp:</strong> <span th:text="${timestamp}">Error timestamp</span></p>
+                <p th:if="${path != null}"><strong>Path:</strong> <span th:text="${path}">Request path</span></p>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home"></i>
+                    Go Home
+                </a>
+                <a href="javascript:history.back()" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Go Back
+                </a>
+                <a href="javascript:location.reload()" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i>
+                    Refresh Page
+                </a>
+            </div>
+            
+            <!-- Additional Help Section -->
+            <div class="mt-4 pt-4" style="border-top: 1px solid #e5e7eb;">
+                <p class="text-muted small mb-2">
+                    <i class="fas fa-lightbulb me-1"></i>
+                    <strong>Need help?</strong>
+                </p>
+                <p class="text-muted small mb-0">
+                    If this problem persists, please contact the system administrator or try again in a few minutes.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh for server errors after 30 seconds
+        if (window.location.pathname.includes('500') || document.querySelector('.error-code').textContent === '500') {
+            let countdown = 30;
+            const refreshBtn = document.querySelector('[href="javascript:location.reload()"]');
+            const originalText = refreshBtn.innerHTML;
+            
+            const updateCountdown = () => {
+                if (countdown > 0) {
+                    refreshBtn.innerHTML = `<i class="fas fa-redo"></i> Auto-refresh in ${countdown}s`;
+                    countdown--;
+                    setTimeout(updateCountdown, 1000);
+                } else {
+                    location.reload();
+                }
+            };
+            
+            // Start countdown after 5 seconds
+            setTimeout(() => {
+                updateCountdown();
+            }, 5000);
+        }
+        
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorIcon = document.querySelector('.error-icon');
+            if (errorIcon) {
+                errorIcon.addEventListener('click', function() {
+                    this.style.animation = 'none';
+                    setTimeout(() => {
+                        this.style.animation = 'pulse 2s infinite';
+                    }, 10);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

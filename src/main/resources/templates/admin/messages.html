@@ -4,94 +4,361 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Messages - Repairo Admin</title>
+    
+    <!-- Core CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSRF Token for AJAX -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-dark: #3730a3;
+            --secondary-color: #6b7280;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-bg);
+            color: #1f2937;
+            font-size: 14px;
+        }
+        
+        /* Header */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: none;
+            padding: 0.75rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        /* Navigation Tabs */
+        .nav-tabs-container {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 0;
+            color: var(--secondary-color);
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+            border-color: transparent;
+            background: #f9fafb;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background: white;
+            border-color: transparent transparent var(--primary-color) transparent;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        /* Page Content */
+        .page-header {
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: var(--secondary-color);
+            font-size: 1rem;
+        }
+        
+        /* Cards */
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-bottom: 1px solid #e5e7eb;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        /* Message specific styles */
+        .customer-list { 
+            max-height: 600px; 
+            overflow-y: auto; 
+        }
+        .messages-area { 
+            max-height: 450px; 
+            overflow-y: auto;
+            min-height: 300px;
+        }
+        
+        .customer-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .customer-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .customer-item.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-left-color: var(--primary-dark);
+        }
+        
+        .customer-item.active .text-muted {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .message-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            margin-bottom: 0.5rem;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message-customer {
+            background: #f1f3f4;
+            color: #1f2937;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+        }
+        
+        .message-admin {
+            background: var(--primary-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+        
+        .message-sender {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        #replyMessage:focus {
+            box-shadow: none;
+            border-color: var(--primary-color);
+        }
+        
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.5rem;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid px-4">
             <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-mobile-alt me-2"></i>Repairo Admin
+                <i class="fas fa-mobile-alt me-2"></i>Repairo
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="/logout">
-                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs-container">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/dashboard">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/customers">
+                    <i class="fas fa-users me-2"></i>Customers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/admin/messages">
+                    <i class="fas fa-comments me-2"></i>Messages
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/repairs">
+                    <i class="fas fa-tools me-2"></i>Repairs
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid px-4 pb-4">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Customer Messages</h1>
+            <p class="page-subtitle">Manage customer communications and provide real-time support.</p>
+        </div>
+        
         <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2">
-                <div class="list-group">
-                    <a href="/admin/dashboard" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                    </a>
-                    <a href="/admin/customers" class="list-group-item list-group-item-action">
-                        <i class="fas fa-users me-2"></i>Customers
-                    </a>
-                    <a href="/admin/messages" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-comments me-2"></i>Messages
-                    </a>
-                    <a href="/admin/repairs" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tools me-2"></i>Repairs
-                    </a>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10">
-                <h2><i class="fas fa-comments me-2"></i>Customer Messages</h2>
-                
-                <div th:if="${#lists.isEmpty(customers)}" class="text-center mt-5">
-                    <i class="fas fa-comments fa-4x text-muted mb-4"></i>
-                    <h4 class="text-muted">No pending messages</h4>
-                    <p class="text-muted">Messages from customers will appear here when they contact via WhatsApp.</p>
-                </div>
-
-                <div th:each="customer : ${customers}" class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0" th:text="${customer.name ?: 'Unknown Customer'}">Unknown Customer</h5>
-                            <small class="text-muted" th:text="${customer.phoneModel}">Phone Model</small>
+            <!-- Customer List -->
+            <div class="col-lg-4 col-md-5 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-users me-2"></i>Customers
+                        </h5>
+                        <div class="mt-3">
+                            <input type="text" class="form-control" id="searchCustomer" 
+                                   placeholder="Search customers..." onkeyup="filterCustomers()">
                         </div>
-                        <span class="badge bg-warning">Pending Reply</span>
                     </div>
-                    <div class="card-body">
-                        <div class="message-thread" style="max-height: 300px; overflow-y: auto;">
-                            <div th:each="message : ${customer.messages}" 
-                                 th:class="${message.from == 'customer'} ? 'message-customer mb-2' : 'message-admin mb-2'">
-                                <div th:if="${message.from == 'customer'}" class="d-flex">
-                                    <div class="bg-light p-2 rounded me-auto" style="max-width: 70%;">
-                                        <small class="text-primary"><i class="fas fa-user me-1"></i>Customer</small>
-                                        <p class="mb-1" th:text="${message.text}">Message text</p>
-                                        <small class="text-muted" th:text="${#temporals.format(message.timestamp, 'HH:mm')}">12:34</small>
+                    <div class="card-body p-0 customer-list">
+                        <div th:if="${customers != null and !customers.empty}">
+                            <div th:each="customer, iterStat : ${customers}" 
+                                 class="customer-item p-3 border-bottom"
+                                 th:classappend="${iterStat.index == 0} ? 'active' : ''"
+                                 th:data-customer-id="${customer.customerId}"
+                                 onclick="selectCustomer(this)"
+                                 style="cursor: pointer;">
+                                
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 45px; height: 45px; font-weight: 600;">
+                                            <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div th:if="${message.from == 'admin'}" class="d-flex">
-                                    <div class="bg-primary text-white p-2 rounded ms-auto" style="max-width: 70%;">
-                                        <small><i class="fas fa-user-tie me-1"></i>Admin</small>
-                                        <p class="mb-1" th:text="${message.text}">Message text</p>
-                                        <small th:text="${#temporals.format(message.timestamp, 'HH:mm')}">12:34</small>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-1 fw-semibold" th:text="${customer.name}">Customer Name</h6>
+                                            <small class="text-muted" th:if="${customer.messages != null and !customer.messages.empty}"
+                                                   th:text="${#temporals.format(customer.messages[customer.messages.size() - 1].timestamp, 'HH:mm')}">
+                                                Time
+                                            </small>
+                                        </div>
+                                        <p class="mb-1 text-muted small" th:text="${customer.phone}">Phone</p>
+                                        <small class="text-muted" th:if="${customer.messages != null and !customer.messages.empty}"
+                                               th:text="${customer.messages[customer.messages.size() - 1].text.length() > 35 
+                                                       ? customer.messages[customer.messages.size() - 1].text.substring(0, 35) + '...'
+                                                       : customer.messages[customer.messages.size() - 1].text}">
+                                            Last message
+                                        </small>
+                                        <small th:if="${customer.messages == null or customer.messages.empty}"
+                                               class="text-muted">No messages yet</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Reply Form -->
-                        <div class="mt-3">
-                            <form th:onsubmit="'sendReply(\'' + ${customer.customerId} + '\', event); return false;'">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" placeholder="Type your reply..." 
-                                           th:id="'replyInput-' + ${customer.customerId}">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-paper-plane me-1"></i>Send
-                                    </button>
-                                </div>
-                            </form>
+                        <div th:if="${customers == null or customers.empty}" class="p-5 text-center text-muted">
+                            <i class="fas fa-comments mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <h6>No customers with messages yet</h6>
+                            <p class="mb-0 small">Customer conversations will appear here when they contact you.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="col-lg-8 col-md-7">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center" id="chatHeader" style="display: none !important;">
+                        <div class="me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px; font-weight: 600;" id="customerAvatar">
+                                U
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0" id="customerName">Customer Name</h5>
+                            <small id="customerPhone" class="text-muted">Phone Number</small>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <!-- Empty State -->
+                        <div id="emptyState" class="d-flex align-items-center justify-content-center flex-grow-1 text-center text-muted">
+                            <div>
+                                <i class="fas fa-comment-dots mb-3" style="font-size: 4rem; opacity: 0.3;"></i>
+                                <h5>Select a Customer</h5>
+                                <p class="mb-0">Choose a customer from the list to view their messages and start chatting.</p>
+                            </div>
+                        </div>
+
+                        <!-- Messages -->
+                        <div id="messagesContainer" class="flex-grow-1 messages-area mb-3" style="display: none;">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                    </div>
+                    <div class="card-footer" id="replyArea" style="display: none;">
+                        <div class="input-group">
+                            <textarea id="replyMessage" class="form-control" rows="2" 
+                                      placeholder="Type your message..." style="resize: none;"></textarea>
+                            <button class="btn btn-primary px-4" id="sendButton" onclick="sendMessage()">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -99,38 +366,439 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function sendReply(customerId, event) {
-            event.preventDefault();
-            const input = document.getElementById('replyInput-' + customerId);
-            const message = input.value.trim();
+        // Initialize variables
+        let currentCustomerId = null;
+        window.customers = [];
+        
+        // Function to get CSRF token from cookie
+        function getCsrfToken() {
+            const name = 'XSRF-TOKEN=';
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return '';
+        }
+        
+        // Auto-select first customer if available and initialize polling
+        document.addEventListener('DOMContentLoaded', function() {
+            // First, perform an initial check to populate customers
+            checkForNewMessages().then(() => {
+                // After customers are loaded, select the first one if available
+                if (window.customers && window.customers.length > 0) {
+                    const firstCustomer = document.querySelector('.customer-item');
+                    if (firstCustomer) {
+                        selectCustomer(firstCustomer);
+                    }
+                }
+                
+                // Start polling after initial load
+                startMessagePolling();
+            }).catch(() => {
+                // Fallback: try to select first customer from HTML and start polling
+                const firstCustomer = document.querySelector('.customer-item');
+                if (firstCustomer) {
+                    // Build customers array from existing HTML elements
+                    const customerElements = document.querySelectorAll('.customer-item');
+                    window.customers = Array.from(customerElements).map(el => ({
+                        customerId: el.dataset.customerId,
+                        name: el.querySelector('h6').textContent.trim(),
+                        phone: el.querySelectorAll('p')[0].textContent.trim(),
+                        messages: [] // Will be populated by polling
+                    }));
+                    
+                    selectCustomer(firstCustomer);
+                }
+                startMessagePolling();
+            });
+        });
+        
+        function selectCustomer(element) {
+            // Remove active from all customers
+            document.querySelectorAll('.customer-item').forEach(item => {
+                item.classList.remove('active');
+            });
             
-            if (!message) {
+            // Add active to selected
+            element.classList.add('active');
+            
+            // Get customer ID and store globally
+            window.currentCustomerId = element.dataset.customerId;
+            
+            // Find customer data from global customers array
+            const customer = window.customers ? window.customers.find(c => c.customerId === window.currentCustomerId) : null;
+            if (!customer) {
+                console.warn('Customer not found:', window.currentCustomerId);
+                return;
+            }
+            
+            // Update header
+            document.getElementById('customerName').textContent = customer.name || 'Unknown Customer';
+            document.getElementById('customerPhone').textContent = customer.phone;
+            document.getElementById('customerAvatar').textContent = customer.name ? customer.name.substring(0,1).toUpperCase() : 'U';
+            
+            // Show/hide elements
+            document.getElementById('chatHeader').style.display = 'flex';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('messagesContainer').style.display = 'block';
+            document.getElementById('replyArea').style.display = 'block';
+            
+            // Load messages
+            loadMessages(customer);
+        }
+        
+        // Make selectCustomer globally available for inline onclick handlers
+        window.selectCustomer = selectCustomer;
+        
+        function loadMessages(customer) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            
+            if (!customer.messages || customer.messages.length === 0) {
+                container.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                        <div class="text-center">
+                            <i class="fas fa-comments mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                            <p class="mb-0">No messages yet</p>
+                            <small>Start the conversation!</small>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const chatDiv = document.createElement('div');
+            chatDiv.className = 'chat-messages d-flex flex-column';
+            
+            customer.messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message-bubble ' + (message.from === 'customer' ? 'message-customer' : 'message-admin');
+                
+                const time = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const isAdmin = message.from === 'admin';
+                
+                messageDiv.innerHTML = `
+                    <div class="message-sender">${isAdmin ? 'You' : customer.name || 'Customer'}</div>
+                    <div class="message-text">${escapeHtml(message.text)}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                chatDiv.appendChild(messageDiv);
+            });
+            
+            container.appendChild(chatDiv);
+            
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const textarea = document.getElementById('replyMessage');
+            const button = document.getElementById('sendButton');
+            const message = textarea.value.trim();
+            
+            if (!message || !window.currentCustomerId) {
                 alert('Please enter a message');
                 return;
             }
+
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             
             fetch('/admin/send-message', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: `customerId=${customerId}&message=${encodeURIComponent(message)}`
+                body: `customerId=${window.currentCustomerId}&message=${encodeURIComponent(message)}`
             })
             .then(response => response.text())
             .then(data => {
                 if (data === 'success') {
-                    input.value = '';
-                    location.reload(); // Refresh to show updated messages
+                    textarea.value = '';
+                    // Refresh the page to show the new message
+                    location.reload();
                 } else {
-                    alert('Failed to send message');
+                    alert('Failed to send message: ' + data);
                 }
             })
             .catch(error => {
-                alert('Error sending message');
+                console.error('Error:', error);
+                alert('Failed to send message');
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-paper-plane"></i>';
             });
         }
+        
+        function filterCustomers() {
+            const search = document.getElementById('searchCustomer').value.toLowerCase();
+            const customers = document.querySelectorAll('.customer-item');
+            
+            customers.forEach(customer => {
+                const name = customer.querySelector('h6').textContent.toLowerCase();
+                const phone = customer.querySelector('p').textContent.toLowerCase();
+                
+                if (name.includes(search) || phone.includes(search)) {
+                    customer.style.display = 'block';
+                } else {
+                    customer.style.display = 'none';
+                }
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Handle Enter key in textarea
+        document.getElementById('replyMessage').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Auto-update functionality for new messages
+        let lastChecked = new Date().toISOString();
+        let pollingInterval;
+        let isPolling = false;
+        
+        function startMessagePolling() {
+            if (isPolling) return;
+            
+            isPolling = true;
+            pollingInterval = setInterval(checkForNewMessages, 3000); // Check every 3 seconds
+            console.log('Started message polling every 3 seconds');
+        }
+        
+        function stopMessagePolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                isPolling = false;
+                console.log('Stopped message polling');
+            }
+        }
+        
+        function checkForNewMessages() {
+            return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Polling response:', data);
+                    
+                    if (data.success) {
+                        // Always update customers data
+                        if (data.customers) {
+                            window.customers = data.customers;
+                        }
+                        
+                        if (data.hasNewMessages && data.newMessageCount > 0) {
+                            console.log(`Found ${data.newMessageCount} new messages`);
+                            
+                            // Show notification
+                            showNewMessageNotification(data.newMessageCount);
+                            
+                            // Update the entire customer list with fresh data
+                            if (data.customers && data.customers.length > 0) {
+                                refreshCustomerList(data.customers);
+                            }
+                        }
+                        
+                        // Always update last checked timestamp
+                        if (data.timestamp) {
+                            lastChecked = data.timestamp;
+                        }
+                        
+                        return data;
+                    } else {
+                        console.error('Polling failed:', data.error);
+                        throw new Error(data.error || 'Polling failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking for new messages:', error);
+                    throw error;
+                });
+        }
+        
+        function showNewMessageNotification(count) {
+            // Create or update notification badge
+            let badge = document.querySelector('.new-message-badge');
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'new-message-badge';
+                badge.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #10b981;
+                    color: white;
+                    padding: 0.75rem 1rem;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    z-index: 1050;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(badge);
+                
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    if (badge && badge.parentNode) {
+                        badge.style.opacity = '0';
+                        setTimeout(() => badge.remove(), 300);
+                    }
+                }, 10000);
+                
+                // Click to refresh page
+                badge.addEventListener('click', () => {
+                    location.reload();
+                });
+            }
+            
+            badge.innerHTML = `<i class="fas fa-comments me-2"></i>${count} new message${count > 1 ? 's' : ''}! Click to refresh`;
+            badge.style.opacity = '1';
+        }
+        
+        function updateCustomerList(customers) {
+            // Update the customer list in the sidebar
+            const customerList = document.querySelector('.customer-list');
+            if (!customerList) return;
+            
+            // Add visual indicator for customers with new messages
+            customers.forEach(customer => {
+                if (customer.messages && customer.messages.length > 0) {
+                    // Find the customer item in the list
+                    const customerItem = document.querySelector(`[data-customer-id="${customer.customerId}"]`);
+                    if (customerItem && !customerItem.querySelector('.new-message-indicator')) {
+                        // Add new message indicator
+                        const indicator = document.createElement('div');
+                        indicator.className = 'new-message-indicator';
+                        indicator.innerHTML = '<i class="fas fa-circle text-primary"></i>';
+                        indicator.style.cssText = 'position: absolute; top: 10px; right: 10px; font-size: 8px;';
+                        customerItem.style.position = 'relative';
+                        customerItem.appendChild(indicator);
+                    }
+                }
+            });
+        }
+        
+        function refreshCustomerList(customers) {
+            console.log('Refreshing customer list with', customers.length, 'customers');
+            
+            const customerList = document.querySelector('.customer-list');
+            if (!customerList) {
+                console.warn('Customer list element not found');
+                return;
+            }
+            
+            // Store customers globally for selectCustomer function
+            window.customers = customers;
+            
+            // Clear existing list
+            customerList.innerHTML = '';
+            
+            if (customers.length === 0) {
+                customerList.innerHTML = `
+                    <div class="text-center p-4 text-muted">
+                        <i class="fas fa-users mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                        <p class="mb-0">No customers yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Rebuild customer list
+            customers.forEach((customer, index) => {
+                const lastMessage = customer.messages && customer.messages.length > 0 
+                    ? customer.messages[customer.messages.length - 1] 
+                    : null;
+                
+                const lastMessageText = lastMessage 
+                    ? (lastMessage.text.length > 30 ? lastMessage.text.substring(0, 30) + '...' : lastMessage.text)
+                    : 'No messages';
+                
+                const lastMessageTime = lastMessage 
+                    ? new Date(lastMessage.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                    : '';
+                
+                const isNew = lastMessage && new Date(lastMessage.timestamp) > new Date(Date.now() - 60000); // New if within last minute
+                const isCurrentlySelected = window.currentCustomerId === customer.customerId;
+                
+                const customerItem = document.createElement('div');
+                customerItem.className = `customer-item p-3 border-bottom cursor-pointer ${isCurrentlySelected ? 'active' : ''}`;
+                customerItem.setAttribute('data-customer-id', customer.customerId);
+                customerItem.onclick = () => selectCustomer(customerItem);
+                
+                customerItem.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px; font-weight: 600;">
+                                <span>${customer.name ? customer.name.substring(0,1).toUpperCase() : 'U'}</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-1 text-truncate fw-semibold">
+                                    ${customer.name || 'Unknown Customer'}
+                                    ${isNew ? '<span class="badge bg-success ms-1" style="font-size: 0.6em;">NEW</span>' : ''}
+                                </h6>
+                                <small class="text-muted">${lastMessageTime}</small>
+                            </div>
+                            <p class="mb-1 text-muted small">${customer.phone || 'No phone'}</p>
+                            <p class="mb-0 text-muted small text-truncate">${lastMessageText}</p>
+                        </div>
+                    </div>
+                `;
+                
+                customerList.appendChild(customerItem);
+            });
+            
+            console.log('Customer list refreshed successfully');
+            
+            // If there's a currently selected customer, refresh their chat view
+            if (window.currentCustomerId) {
+                const updatedCustomer = customers.find(c => c.customerId === window.currentCustomerId);
+                if (updatedCustomer) {
+                    loadMessages(updatedCustomer);
+                }
+            } else if (customers.length > 0) {
+                // Auto-select first customer if none selected
+                const firstCustomerItem = customerList.querySelector('.customer-item');
+                if (firstCustomerItem) {
+                    selectCustomer(firstCustomerItem);
+                }
+            }
+        }
+        
+        // Stop polling when page is hidden/user switches tabs
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopMessagePolling();
+            } else {
+                startMessagePolling();
+            }
+        });
+        
+        // Stop polling when user leaves the page
+        window.addEventListener('beforeunload', function() {
+            stopMessagePolling();
+        });
     </script>
 </body>
 </html>
