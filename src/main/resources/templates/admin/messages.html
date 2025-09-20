@@ -368,7 +368,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script th:inline="javascript">
         // Initialize variables
         let currentCustomerId = null;
         window.customers = [];
@@ -392,8 +392,11 @@
         
         // Auto-select first customer if available and initialize polling
         document.addEventListener('DOMContentLoaded', function() {
-            // First, perform an initial check to populate customers
-            checkForNewMessages().then(() => {
+            // Initialize lastChecked based on the most recent message timestamp
+            initializeLastCheckedTimestamp();
+            
+            // First, perform a silent initial check to establish baseline
+            checkForNewMessages(true).then(() => {
                 // After customers are loaded, select the first one if available
                 if (window.customers && window.customers.length > 0) {
                     const firstCustomer = document.querySelector('.customer-item');
@@ -459,6 +462,13 @@
         
         // Make selectCustomer globally available for inline onclick handlers
         window.selectCustomer = selectCustomer;
+        
+        function initializeLastCheckedTimestamp() {
+            // Set lastChecked to current time to prevent existing messages from being marked as "new"
+            // Only messages that arrive after the page loads should be considered new
+            lastChecked = new Date().toISOString();
+            console.log('Initialized lastChecked to current time:', lastChecked);
+        }
         
         function loadMessages(customer) {
             const container = document.getElementById('messagesContainer');
@@ -526,8 +536,23 @@
             .then(data => {
                 if (data === 'success') {
                     textarea.value = '';
-                    // Refresh the page to show the new message
-                    location.reload();
+                    // Instead of refreshing, manually add the message to the UI
+                    addMessageToCurrentChat('admin', message);
+                    
+                    // Set flag to prevent showing notification for this message
+                    justSentMessage = true;
+                    
+                    // Update lastChecked to current time to prevent treating admin messages as "new"
+                    lastChecked = new Date().toISOString();
+                    
+                    // Force a check for updates to refresh customer list (but won't show notification for admin message)
+                    setTimeout(() => {
+                        checkForNewMessages(true); // Use silent mode to avoid notification
+                        // Reset flag after a short delay
+                        setTimeout(() => {
+                            justSentMessage = false;
+                        }, 2000);
+                    }, 100); // Small delay to ensure the message is processed on server
                 } else {
                     alert('Failed to send message: ' + data);
                 }
@@ -564,6 +589,58 @@
             return div.innerHTML;
         }
         
+        function addMessageToCurrentChat(from, text) {
+            if (!window.currentCustomerId) return;
+            
+            const container = document.getElementById('messagesContainer');
+            const chatDiv = container.querySelector('.chat-messages');
+            
+            if (!chatDiv) {
+                // If no chat exists yet, create one
+                const newChatDiv = document.createElement('div');
+                newChatDiv.className = 'chat-messages d-flex flex-column';
+                container.innerHTML = '';
+                container.appendChild(newChatDiv);
+            }
+            
+            const currentCustomer = window.customers.find(c => c.customerId === window.currentCustomerId);
+            const customerName = currentCustomer ? currentCustomer.name : 'Customer';
+            
+            // Create new message element
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-bubble ' + (from === 'customer' ? 'message-customer' : 'message-admin');
+            
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const isAdmin = from === 'admin';
+            
+            messageDiv.innerHTML = `
+                <div class="message-sender">${isAdmin ? 'You' : customerName}</div>
+                <div class="message-text">${escapeHtml(text)}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            // Add to chat
+            const currentChatDiv = container.querySelector('.chat-messages');
+            if (currentChatDiv) {
+                currentChatDiv.appendChild(messageDiv);
+            }
+            
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+            
+            // Update the customer's messages array in memory
+            if (currentCustomer) {
+                if (!currentCustomer.messages) {
+                    currentCustomer.messages = [];
+                }
+                currentCustomer.messages.push({
+                    from: from,
+                    text: text,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+        
         // Handle Enter key in textarea
         document.getElementById('replyMessage').addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -573,9 +650,10 @@
         });
         
         // Auto-update functionality for new messages
-        let lastChecked = new Date().toISOString();
+        let lastChecked = null; // Will be initialized based on latest message
         let pollingInterval;
         let isPolling = false;
+        let justSentMessage = false; // Flag to prevent notification after sending message
         
         function startMessagePolling() {
             if (isPolling) return;
@@ -593,11 +671,13 @@
             }
         }
         
-        function checkForNewMessages() {
+        function checkForNewMessages(silent = false) {
             return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Polling response:', data);
+                    if (!silent) {
+                        console.log('Polling response:', data);
+                    }
                     
                     if (data.success) {
                         // Always update customers data
@@ -605,31 +685,39 @@
                             window.customers = data.customers;
                         }
                         
-                        if (data.hasNewMessages && data.newMessageCount > 0) {
-                            console.log(`Found ${data.newMessageCount} new messages`);
+                        // Only show notification for customer messages, not admin messages, and not in silent mode
+                        if (data.hasNewMessages && data.newMessageCount > 0 && !silent && !justSentMessage) {
+                            console.log(`Found ${data.newMessageCount} new customer messages`);
                             
-                            // Show notification
+                            // Show notification only if there are actually new customer messages
                             showNewMessageNotification(data.newMessageCount);
                             
                             // Update the entire customer list with fresh data
                             if (data.customers && data.customers.length > 0) {
                                 refreshCustomerList(data.customers);
                             }
+                        } else if (data.customers && data.customers.length > 0) {
+                            // Even without new messages, update customer list to reflect any admin message sends
+                            refreshCustomerList(data.customers);
                         }
                         
-                        // Always update last checked timestamp
+                        // Always update last checked timestamp to prevent considering old messages as new
                         if (data.timestamp) {
                             lastChecked = data.timestamp;
                         }
                         
                         return data;
                     } else {
-                        console.error('Polling failed:', data.error);
+                        if (!silent) {
+                            console.error('Polling failed:', data.error);
+                        }
                         throw new Error(data.error || 'Polling failed');
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking for new messages:', error);
+                    if (!silent) {
+                        console.error('Error checking for new messages:', error);
+                    }
                     throw error;
                 });
         }
@@ -736,7 +824,11 @@
                     ? new Date(lastMessage.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
                     : '';
                 
-                const isNew = lastMessage && new Date(lastMessage.timestamp) > new Date(Date.now() - 60000); // New if within last minute
+                // Check if message is truly new (within last 30 seconds and from customer)
+                const isNew = lastMessage && 
+                             lastMessage.from === 'customer' &&
+                             new Date(lastMessage.timestamp) > new Date(Date.now() - 30000);
+                             
                 const isCurrentlySelected = window.currentCustomerId === customer.customerId;
                 
                 const customerItem = document.createElement('div');

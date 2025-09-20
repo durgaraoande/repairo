@@ -405,18 +405,22 @@
             }
         }
         
-        function checkForUpdates() {
-            console.log('Dashboard checking for updates...');
-            fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
+        function checkForUpdates(silent = false) {
+            if (!silent) {
+                console.log('Dashboard checking for updates...');
+            }
+            return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Dashboard polling response:', data);
+                    if (!silent) {
+                        console.log('Dashboard polling response:', data);
+                    }
                     
                     if (data.success) {
-                        if (data.hasNewMessages && data.newMessageCount > 0) {
+                        if (data.hasNewMessages && data.newMessageCount > 0 && !silent) {
                             console.log(`Dashboard: Found ${data.newMessageCount} new messages`);
                             
-                            // Show notification
+                            // Show notification only if not silent
                             showNewMessageNotification(data.newMessageCount);
                             
                             // Update statistics if needed
@@ -427,12 +431,20 @@
                         if (data.timestamp) {
                             lastChecked = data.timestamp;
                         }
+                        
+                        return data;
                     } else {
-                        console.error('Dashboard polling failed:', data.error);
+                        if (!silent) {
+                            console.error('Dashboard polling failed:', data.error);
+                        }
+                        throw new Error(data.error || 'Polling failed');
                     }
                 })
                 .catch(error => {
-                    console.error('Dashboard: Error checking for updates:', error);
+                    if (!silent) {
+                        console.error('Dashboard: Error checking for updates:', error);
+                    }
+                    throw error;
                 });
         }
         
@@ -504,7 +516,14 @@
         
         // Start polling when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            startDashboardPolling();
+            // Do a silent initial check to establish baseline without showing notifications
+            checkForUpdates(true).then(() => {
+                // After initial check, start regular polling
+                startDashboardPolling();
+            }).catch(() => {
+                // If initial check fails, start polling anyway
+                startDashboardPolling();
+            });
         });
         
         // Stop polling when page is hidden/user switches tabs
