@@ -1,544 +1,688 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Dashboard - Repairo Admin</title>
-    
-    <!-- Core CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- CSRF Token for AJAX -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    
-    <!-- Custom CSS -->
+
+    <!-- Core Vendor CSS (kept for existing styling hooks) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Optimized / Enhanced Dashboard Styles -->
     <style>
         :root {
-            --primary-color: #4f46e5;
+            --primary: #4f46e5;
+            --primary-accent: #6366f1;
             --primary-dark: #3730a3;
-            --secondary-color: #6b7280;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #3b82f6;
-            --light-bg: #f8fafc;
-            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --bg-body: #f5f7fa;
+            --bg-surface: #ffffff;
+            --bg-soft: #f1f4f9;
+            --text-main: #1f2937;
+            --text-secondary: #6b7280;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --radius-xs: 4px;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.02);
+            --shadow: 0 2px 6px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.06);
+            --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.12), 0 2px 6px -2px rgba(0,0,0,.08);
+            --gradient-header: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+            --gradient-muted: linear-gradient(135deg,#f9fafb 0%,#f1f5f9 100%);
+            --focus-ring: 0 0 0 3px rgba(99,102,241,.45);
+            --transition: 140ms cubic-bezier(.4,0,.2,1);
         }
-        
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --bg-surface: #1e293b;
+                --bg-soft: #243450;
+                --text-main: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --border: #334155;
+                --border-strong: #475569;
+                --shadow-sm: 0 1px 2px rgba(0,0,0,.6);
+                --shadow: 0 2px 6px rgba(0,0,0,.5);
+                --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.6);
+                --gradient-muted: linear-gradient(135deg,#1e293b 0%,#334155 100%);
+            }
+            .navbar {
+                box-shadow: 0 2px 10px rgba(0,0,0,.55);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--light-bg);
-            color: #1f2937;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
             font-size: 14px;
-        }
-        
-        /* Header */
-        .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: none;
-            padding: 0.75rem 0;
-        }
-        
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-        }
-        
-        /* Navigation Tabs */
-        .nav-tabs-container {
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 0 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .nav-tabs .nav-link {
-            border: none;
-            border-radius: 0;
-            color: var(--secondary-color);
-            font-weight: 500;
-            padding: 1rem 1.5rem;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-tabs .nav-link:hover {
-            color: var(--primary-color);
-            border-color: transparent;
-            background: #f9fafb;
-        }
-        
-        .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            background: white;
-            border-color: transparent transparent var(--primary-color) transparent;
-            border-bottom: 3px solid var(--primary-color);
-        }
-        
-        /* Page Content */
-        .page-header {
-            margin-bottom: 2rem;
-            padding: 0 1rem;
-        }
-        
-        .page-title {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-        
-        .page-subtitle {
-            color: var(--secondary-color);
-            font-size: 1rem;
-        }
-        
-        /* Cards */
-        .card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.2s ease;
-        }
-        
-        .card:hover {
-            box-shadow: var(--card-shadow-hover);
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border-bottom: 1px solid #e5e7eb;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 1.25rem 1.5rem;
-        }
-        
-        .card-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1f2937;
+            -webkit-font-smoothing: antialiased;
             margin: 0;
         }
-        
-        .stats-card {
-            transition: all 0.3s ease;
+
+        /* Header / Nav */
+        .navbar {
+            background: var(--gradient-header) !important;
+            padding: .75rem 0;
+            border: 0;
         }
-        
-        .stats-card:hover {
-            transform: translateY(-2px);
-        }
-        
-        .stats-number {
-            font-size: 2.25rem;
+        .navbar-brand {
             font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-        
-        .stats-label {
-            color: var(--secondary-color);
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .stats-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            letter-spacing: .5px;
+            font-size: 1.35rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            gap: .55rem;
         }
-        
-        .stats-customers { color: var(--info-color); }
-        .stats-customers .stats-icon { background: #dbeafe; color: var(--info-color); }
-        
-        .stats-repairs { color: var(--warning-color); }
-        .stats-repairs .stats-icon { background: #fef3c7; color: var(--warning-color); }
-        
-        .stats-messages { color: var(--danger-color); }
-        .stats-messages .stats-icon { background: #fee2e2; color: var(--danger-color); }
-        
-        .stats-completed { color: var(--success-color); }
-        .stats-completed .stats-icon { background: #d1fae5; color: var(--success-color); }
-        
-        /* Status badges */
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
+        .navbar .nav-link {
+            color: #e2e8f0 !important;
             font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
+            transition: color var(--transition), opacity var(--transition);
         }
-        
-        .status-pending { background: #f3f4f6; color: #6b7280; }
-        .status-in-progress { background: #fef3c7; color: #92400e; }
-        .status-completed { background: #d1fae5; color: #065f46; }
-        
-        /* Table */
-        .table th {
-            background: #f9fafb;
-            border-top: none;
-            border-bottom: 1px solid #e5e7eb;
-            color: var(--secondary-color);
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus-visible {
+            color: #fff !important;
+            outline: none;
+        }
+
+        /* Tabs */
+        .nav-tabs-container {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-tabs {
+            gap: .25rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            position: relative;
+            padding: .9rem 1.3rem;
+            transition: color var(--transition), background var(--transition);
+            white-space: nowrap;
+        }
+        .nav-tabs .nav-link:hover {
+            color: var(--primary);
+            background: var(--bg-soft);
+        }
+        .nav-tabs .nav-link.active {
+            color: var(--primary);
+            background: var(--bg-surface);
+        }
+        .nav-tabs .nav-link.active::after,
+        .nav-tabs .nav-link:focus-visible::after {
+            content: "";
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: 4px;
+            height: 3px;
+            border-radius: 3px;
+            background: var(--primary);
+        }
+
+        /* Page header */
+        .page-header {
+            margin: 1.75rem 0 1.5rem;
+        }
+        .page-title {
+            font-size: clamp(1.4rem, 1.4rem + .8vw, 2rem);
+            font-weight: 700;
+            letter-spacing: .5px;
+            margin-bottom: .4rem;
+        }
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: .95rem;
+            margin: 0;
+        }
+
+        /* Stat Cards */
+        .stat-grid {
+            display: grid;
+            gap: 1.15rem;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            margin-bottom: 1.8rem;
+        }
+        .stat-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem 1.25rem 1.15rem;
+            display: flex;
+            flex-direction: column;
+            gap: .65rem;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            top: -25%;
+            left: -25%;
+            opacity: 0;
+            background: radial-gradient(circle at 60% 40%, rgba(99,102,241,.18), transparent 70%);
+            transition: opacity .4s;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border-radius: var(--radius-md);
+            font-size: 1.25rem;
+            color: #fff;
+            font-weight: 500;
+            background: var(--primary);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.15), 0 3px 6px -2px rgba(0,0,0,.25);
+        }
+        .stat-icon.primary { background: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%); }
+        .stat-icon.success { background: linear-gradient(135deg,var(--success) 0%,#059669 100%); }
+        .stat-icon.warning { background: linear-gradient(135deg,var(--warn) 0%,#d97706 100%); }
+        .stat-icon.info { background: linear-gradient(135deg,var(--info) 0%,#2563eb 100%); }
+
+        .stat-number {
+            font-size: 1.95rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            line-height: 1.05;
+            color: var(--text-main);
+            transition: color .3s ease;
+        }
+        .stat-label {
+            text-transform: uppercase;
+            font-size: .66rem;
+            letter-spacing: .14em;
             font-weight: 600;
-            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .stat-number.updated {
+            animation: pulseStat .9s ease;
+        }
+        @keyframes pulseStat {
+            0% { color: var(--success); transform: scale(1.0); }
+            25% { transform: scale(1.04); }
+            60% { color: var(--text-main); transform: scale(1.0); }
+            100% { color: var(--text-main); }
+        }
+
+        /* Card (Recent Activity) */
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: box-shadow var(--transition), transform var(--transition);
+        }
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+        .card-header {
+            background: var(--gradient-muted);
+            padding: 1rem 1.25rem;
+            border: 0;
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+        }
+        .card-body {
+            padding: 0;
+        }
+
+        .activity-item {
+            padding: .95rem 1rem 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: .9rem;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg,var(--bg-surface),var(--bg-surface));
+            transition: background var(--transition);
+        }
+        .activity-item:last-child {
+            border-bottom: 0;
+        }
+        .activity-item:hover {
+            background: var(--bg-soft);
+        }
+        .activity-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-weight: 600;
+            font-size: .9rem;
+            background: var(--primary);
+            color: #fff;
+            letter-spacing: .5px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px -2px rgba(0,0,0,.35);
+        }
+        .activity-time {
+            font-size: .68rem;
+            letter-spacing: .08em;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 1rem;
+            font-weight: 600;
+            opacity: .7;
         }
-        
-        .table td {
-            border-color: #f3f4f6;
-            padding: 1rem;
-            vertical-align: middle;
-        }
-        
-        .table tbody tr:hover {
-            background-color: #fafbfc;
-        }
-        
-        .customer-name {
+        .badge.bg-light.text-dark {
+            background: var(--bg-soft) !important;
+            color: var(--text-main) !important;
             font-weight: 500;
-            color: #1f2937;
+            border: 1px solid var(--border);
+            letter-spacing: .3px;
         }
-        
-        .customer-phone {
-            color: var(--secondary-color);
-            font-size: 0.875rem;
+
+        /* Empty state */
+        .empty-state {
+            padding: 3.2rem 1rem;
         }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 1.5rem;
+        .empty-state i {
+            opacity: .35;
+            color: var(--text-secondary);
+        }
+        .empty-state h6 {
+            font-weight: 600;
+            margin-top: .75rem;
+            margin-bottom: .35rem;
+        }
+        .empty-state p {
+            font-size: .8rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Notification badge */
+        .new-message-badge {
+            will-change: transform, opacity;
+        }
+        .new-message-badge:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        /* Utility / Transitions */
+        .fade-in {
+            animation: fadeIn .35s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Focus styles */
+        a:focus-visible,
+        button:focus-visible,
+        .nav-link:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+            border-radius: 6px;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .stat-card,
+            .activity-item,
+            .stat-number,
+            .new-message-badge {
+                transition: none !important;
+                animation: none !important;
             }
-            
-            .stats-number {
-                font-size: 1.875rem;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 992px) {
+            .stat-number {
+                font-size: 1.7rem;
             }
-            
-            .nav-tabs .nav-link {
-                padding: 0.75rem 1rem;
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+        }
+        @media (max-width: 640px) {
+            .activity-item {
+                flex-direction: row;
             }
         }
     </style>
 </head>
-
 <body>
-    <!-- Navigation -->
+    <!-- Top Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-mobile-alt me-2"></i>Repairo
+                <i class="fas fa-mobile-alt"></i>
+                <span>Repairo</span>
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <a class="nav-link d-flex align-items-center gap-2" href="/logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
                 </a>
             </div>
         </div>
     </nav>
 
-    <!-- Navigation Tabs -->
+    <!-- Section Tabs -->
     <div class="nav-tabs-container">
-        <ul class="nav nav-tabs">
-            <li class="nav-item">
-                <a class="nav-link active" href="/admin/dashboard">
-                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/customers">
-                    <i class="fas fa-users me-2"></i>Customers
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/messages">
-                    <i class="fas fa-comments me-2"></i>Messages
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/repairs">
-                    <i class="fas fa-tools me-2"></i>Repairs
-                </a>
-            </li>
-        </ul>
+        <div class="container-fluid px-4">
+            <ul class="nav nav-tabs flex-nowrap">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/admin/dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/customers">
+                        <i class="fas fa-users me-2"></i>Customers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/messages">
+                        <i class="fas fa-comments me-2"></i>Messages
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/repairs">
+                        <i class="fas fa-tools me-2"></i>Repairs
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
 
     <!-- Main Content -->
-    <div class="container-fluid px-4 pb-4">
-        <!-- Page Header -->
-        <div class="page-header">
+    <main class="container-fluid px-4 pb-5">
+        <header class="page-header">
             <h1 class="page-title">Dashboard</h1>
-            <p class="page-subtitle">Welcome back! Here's what's happening with your repair business today.</p>
-        </div>
+            <p class="page-subtitle">Welcome to your repair service management dashboard.</p>
+        </header>
 
-        <!-- Statistics Cards -->
-        <div class="row mb-5">
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stats-card stats-customers">
-                    <div class="card-body p-4">
-                        <div class="stats-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="stats-number" th:text="${totalCustomers ?: 0}">0</div>
-                        <div class="stats-label">Total Customers</div>
-                    </div>
+        <!-- Statistics -->
+        <section class="stat-grid" aria-label="Key metrics">
+            <div class="stat-card" data-stat="total-customers">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="stat-icon primary" aria-hidden="true"><i class="fas fa-users"></i></div>
                 </div>
+                <div class="stat-number" th:text="${totalCustomers}">0</div>
+                <div class="stat-label">TOTAL CUSTOMERS</div>
             </div>
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stats-card stats-repairs">
-                    <div class="card-body p-4">
-                        <div class="stats-icon">
-                            <i class="fas fa-tools"></i>
-                        </div>
-                        <div class="stats-number" th:text="${activeRepairs ?: 0}">0</div>
-                        <div class="stats-label">Active Repairs</div>
-                    </div>
+
+            <div class="stat-card" data-stat="active-repairs">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="stat-icon warning" aria-hidden="true"><i class="fas fa-tools"></i></div>
                 </div>
+                <div class="stat-number" th:text="${activeRepairs}">0</div>
+                <div class="stat-label">ACTIVE REPAIRS</div>
             </div>
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stats-card stats-messages">
-                    <div class="card-body p-4">
-                        <div class="stats-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <div class="stats-number" th:text="${pendingMessages ?: 0}">0</div>
-                        <div class="stats-label">Pending Messages</div>
-                    </div>
+
+            <div class="stat-card" data-stat="pending-messages">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="stat-icon info" aria-hidden="true"><i class="fas fa-envelope"></i></div>
                 </div>
+                <div class="stat-number" th:text="${pendingMessages}">0</div>
+                <div class="stat-label">PENDING MESSAGES</div>
             </div>
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card stats-card stats-completed">
-                    <div class="card-body p-4">
-                        <div class="stats-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="stats-number" th:text="${completedToday ?: 0}">0</div>
-                        <div class="stats-label">Completed Today</div>
-                    </div>
+
+            <div class="stat-card" data-stat="completed-today">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="stat-icon success" aria-hidden="true"><i class="fas fa-check-circle"></i></div>
                 </div>
+                <div class="stat-number" th:text="${completedToday}">0</div>
+                <div class="stat-label">COMPLETED TODAY</div>
             </div>
-        </div>
+        </section>
 
         <!-- Recent Activity -->
-        <div class="card">
+        <section class="card" aria-labelledby="recentActivityTitle">
             <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-clock me-2"></i>Recent Customer Activity
-                </h3>
+                <h5 class="card-title" id="recentActivityTitle">
+                    <i class="fas fa-clock"></i>
+                    Recent Activity
+                </h5>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th>Device</th>
-                                <th>Status</th>
-                                <th>Last Update</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:if="${#lists.isEmpty(recentCustomers)}">
-                                <td colspan="4" class="text-center py-5 text-muted">
-                                    <i class="fas fa-clock mb-3" style="font-size: 2rem; opacity: 0.3;"></i>
-                                    <div>No recent activity to display</div>
-                                </td>
-                            </tr>
-                            <tr th:each="customer : ${recentCustomers}" th:if="${!#lists.isEmpty(recentCustomers)}">
-                                <td>
-                                    <div class="customer-name" th:text="${customer.name ?: 'Unknown Customer'}">Unknown Customer</div>
-                                    <div class="customer-phone" th:text="${customer.phone ?: 'No phone'}">No phone</div>
-                                </td>
-                                <td>
-                                    <span th:text="${customer.phoneModel ?: 'Unknown Model'}" class="text-muted">Unknown Model</span>
-                                </td>
-                                <td>
-                                    <span th:switch="${customer.repairStatus}" class="status-badge">
-                                        <span th:case="'PENDING'" class="status-pending">Pending</span>
-                                        <span th:case="'IN_PROGRESS'" class="status-in-progress">In Progress</span>
-                                        <span th:case="'COMPLETED'" class="status-completed">Completed</span>
-                                        <span th:case="*" class="status-pending">Unknown</span>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span th:text="${#temporals.format(customer.lastInteraction, 'MMM dd, HH:mm')}" class="text-muted">Recently</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="card-body p-0" id="recentActivityContainer">
+                <div th:if="${recentCustomers != null and !recentCustomers.empty}">
+                    <div th:each="customer : ${recentCustomers}" class="activity-item">
+                        <div class="activity-avatar" aria-hidden="true">
+                            <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-semibold" th:text="${customer.name}">Customer Name</h6>
+                            <p class="mb-1 text-muted small" th:text="${customer.phone}">Phone</p>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <span class="badge bg-light text-dark" th:text="${customer.repairStatus}">Status</span>
+                                <small class="activity-time"
+                                       th:text="${customer.lastInteraction != null ? #temporals.format(customer.lastInteraction, 'MMM dd, HH:mm') : 'No recent activity'}">
+                                    Time
+                                </small>
+                            </div>
+                        </div>
+                        <div class="ms-auto">
+                            <a href="/admin/messages" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-comment me-1"></i>Message
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${recentCustomers == null or recentCustomers.empty}"
+                     class="text-center empty-state">
+                    <i class="fas fa-history mb-2" style="font-size:3rem;"></i>
+                    <h6>No Recent Activity</h6>
+                    <p>Customer interactions will appear here as they occur.</p>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Auto-update functionality for dashboard
-        let lastChecked = new Date().toISOString();
-        let pollingInterval;
-        let isPolling = false;
-        
-        function startDashboardPolling() {
-            if (isPolling) return;
-            
-            isPolling = true;
-            pollingInterval = setInterval(checkForUpdates, 10000); // Check every 10 seconds
-            console.log('Started dashboard polling');
-        }
-        
-        function stopDashboardPolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                isPolling = false;
-                console.log('Stopped dashboard polling');
-            }
-        }
-        
-        function checkForUpdates(silent = false) {
-            if (!silent) {
-                console.log('Dashboard checking for updates...');
-            }
-            return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!silent) {
-                        console.log('Dashboard polling response:', data);
-                    }
-                    
-                    if (data.success) {
-                        if (data.hasNewMessages && data.newMessageCount > 0 && !silent) {
-                            console.log(`Dashboard: Found ${data.newMessageCount} new messages`);
-                            
-                            // Show notification only if not silent
-                            showNewMessageNotification(data.newMessageCount);
-                            
-                            // Update statistics if needed
-                            updateDashboardStats(data);
-                        }
-                        
-                        // Always update last checked timestamp
-                        if (data.timestamp) {
-                            lastChecked = data.timestamp;
-                        }
-                        
-                        return data;
+        /**
+         * Repairo Admin Dashboard
+         * Lightweight polling + UI update logic (kept compatible with original implementation).
+         */
+        const DashboardApp = {
+            state: {
+                lastChecked: new Date().toISOString(),
+                isPolling: false
+            },
+            config: {
+                pollingInterval: 10000,
+                notificationDuration: 10000
+            },
+            polling: {
+                handle: null
+            },
+
+            init() {
+                this._log('Initializing Dashboard App');
+                this._bindVisibilityEvents();
+                this._initialFetch();
+            },
+
+            _bindVisibilityEvents() {
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.stopPolling();
                     } else {
-                        if (!silent) {
-                            console.error('Dashboard polling failed:', data.error);
-                        }
-                        throw new Error(data.error || 'Polling failed');
+                        this.startPolling();
                     }
-                })
-                .catch(error => {
-                    if (!silent) {
-                        console.error('Dashboard: Error checking for updates:', error);
-                    }
-                    throw error;
                 });
-        }
-        
-        function showNewMessageNotification(count) {
-            // Create notification banner at top of dashboard
-            let banner = document.querySelector('.new-message-banner');
-            if (!banner) {
-                banner = document.createElement('div');
-                banner.className = 'new-message-banner';
-                banner.style.cssText = `
+                window.addEventListener('beforeunload', () => this.stopPolling());
+            },
+
+            _initialFetch() {
+                this.checkForUpdates(true)
+                    .finally(() => this.startPolling());
+            },
+
+            startPolling() {
+                if (this.state.isPolling) return;
+                this.state.isPolling = true;
+                this.polling.handle = setInterval(() => this.checkForUpdates(), this.config.pollingInterval);
+                this._log('Polling started every ' + this.config.pollingInterval + 'ms');
+            },
+
+            stopPolling() {
+                if (this.polling.handle) {
+                    clearInterval(this.polling.handle);
+                    this.polling.handle = null;
+                    this.state.isPolling = false;
+                    this._log('Polling stopped');
+                }
+            },
+
+            checkForUpdates(silent = false) {
+                if (!silent) this._log('Checking for updates...');
+                const url = `/admin/check-new-messages?lastChecked=${encodeURIComponent(this.state.lastChecked)}`;
+                return fetch(url, { headers: { 'Accept': 'application/json' } })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            this._handleSuccess(data, silent);
+                        } else {
+                            throw new Error(data.error || 'Unknown polling error');
+                        }
+                    })
+                    .catch(err => this._handleError(err, silent));
+            },
+
+            _handleSuccess(data, silent) {
+                if (!silent) this._log('Polling response', data);
+                if (data.timestamp) {
+                    this.state.lastChecked = data.timestamp;
+                }
+                if (!silent && data.hasNewMessages && data.newMessageCount > 0) {
+                    this.showNewMessageNotification(data.newMessageCount);
+                    this.updateDashboardStats(data);
+                }
+            },
+
+            _handleError(error, silent) {
+                if (!silent) console.error('Dashboard polling failed:', error);
+            },
+
+            showNewMessageNotification(count) {
+                const existing = document.querySelector('.new-message-badge');
+                if (existing) existing.remove();
+
+                const badge = document.createElement('button');
+                badge.type = 'button';
+                badge.className = 'new-message-badge fade-in';
+                badge.setAttribute('aria-live', 'assertive');
+                badge.setAttribute('role', 'alert');
+                badge.style.cssText = `
                     position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                    color: white;
-                    padding: 0.75rem;
-                    text-align: center;
-                    z-index: 1060;
-                    font-weight: 500;
+                    top: 20px;
+                    right: 20px;
+                    background: var(--success);
+                    color: #fff;
+                    padding: .75rem 1.05rem;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    font-size: .85rem;
+                    display: flex;
+                    align-items: center;
+                    gap: .55rem;
+                    border: none;
+                    box-shadow: 0 6px 18px -4px rgba(16,185,129,.55), 0 2px 6px -2px rgba(0,0,0,.3);
                     cursor: pointer;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    z-index: 1050;
+                    letter-spacing: .4px;
+                    transition: background .25s ease, transform .25s ease;
                 `;
-                
-                // Insert at top of body
-                document.body.insertBefore(banner, document.body.firstChild);
-                
-                // Adjust body padding to account for banner
-                document.body.style.paddingTop = '50px';
-                
-                // Click to go to messages page
-                banner.addEventListener('click', () => {
+                badge.innerHTML = `<i class="fas fa-comments"></i><span>${count} new message${count > 1 ? 's' : ''}! Click to view</span>`;
+                badge.addEventListener('click', () => {
                     window.location.href = '/admin/messages';
                 });
-                
-                // Auto-hide after 15 seconds
+                badge.addEventListener('mouseenter', () => {
+                    badge.style.transform = 'translateY(-2px)';
+                });
+                badge.addEventListener('mouseleave', () => {
+                    badge.style.transform = '';
+                });
+
+                document.body.appendChild(badge);
+
                 setTimeout(() => {
-                    if (banner && banner.parentNode) {
-                        banner.style.transform = 'translateY(-100%)';
-                        document.body.style.paddingTop = '0';
-                        setTimeout(() => banner.remove(), 300);
+                    if (badge.isConnected) {
+                        badge.style.opacity = '0';
+                        badge.style.transform = 'translateY(-4px)';
+                        setTimeout(() => badge.remove(), 320);
                     }
-                }, 15000);
+                }, this.config.notificationDuration);
+            },
+
+            updateDashboardStats(data) {
+                if (data.newMessageCount) {
+                    const node = document.querySelector('[data-stat="pending-messages"] .stat-number');
+                    if (node) {
+                        const current = parseInt(node.textContent, 10) || 0;
+                        const updated = current + data.newMessageCount;
+                        if (updated !== current) {
+                            node.textContent = updated;
+                            node.classList.add('updated');
+                            setTimeout(() => node.classList.remove('updated'), 1000);
+                        }
+                        this._log('Updated pending messages to', updated);
+                    }
+                }
+            },
+
+            _log(...args) {
+                console.log('📊', ...args);
             }
-            
-            banner.innerHTML = `
-                <i class="fas fa-comments me-2"></i>
-                ${count} new message${count > 1 ? 's' : ''} received! 
-                <strong>Click here to view</strong>
-                <i class="fas fa-arrow-right ms-2"></i>
-            `;
-            banner.style.transform = 'translateY(0)';
-        }
-        
-        function updateDashboardStats(data) {
-            // Update pending messages count if element exists
-            const pendingElement = document.querySelector('.stats-messages .stats-number');
-            if (pendingElement && data.newMessageCount) {
-                const currentCount = parseInt(pendingElement.textContent) || 0;
-                pendingElement.textContent = currentCount + data.newMessageCount;
-                
-                // Add subtle animation to highlight the change
-                pendingElement.style.color = '#10b981';
-                setTimeout(() => {
-                    pendingElement.style.color = '';
-                }, 2000);
-            }
-        }
-        
-        // Start polling when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Do a silent initial check to establish baseline without showing notifications
-            checkForUpdates(true).then(() => {
-                // After initial check, start regular polling
-                startDashboardPolling();
-            }).catch(() => {
-                // If initial check fails, start polling anyway
-                startDashboardPolling();
-            });
-        });
-        
-        // Stop polling when page is hidden/user switches tabs
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                stopDashboardPolling();
-            } else {
-                startDashboardPolling();
-            }
-        });
-        
-        // Stop polling when user leaves the page
-        window.addEventListener('beforeunload', function() {
-            stopDashboardPolling();
-        });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => DashboardApp.init());
+
+        /* Backwards compatible global aliases (original code expected these) */
+        function startDashboardPolling() { DashboardApp.startPolling(); }
+        function stopDashboardPolling() { DashboardApp.stopPolling(); }
+        function checkForUpdates(silent) { return DashboardApp.checkForUpdates(!!silent); }
+        function showNewMessageNotification(count) { DashboardApp.showNewMessageNotification(count); }
+        function updateDashboardStats(data) { DashboardApp.updateDashboardStats(data); }
+        window.DashboardApp = DashboardApp;
     </script>
 </body>
 </html>

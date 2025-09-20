@@ -1,307 +1,516 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Messages - Repairo Admin</title>
-    
-    <!-- Core CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- CSRF Token for AJAX -->
+
+    <!-- Core Vendor CSS (retained for existing dependency hooks) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+    <!-- CSRF (kept for AJAX compatibility) -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    
-    <!-- Custom CSS -->
+
+    <!-- Unified App Theme / Messages UI -->
     <style>
         :root {
-            --primary-color: #4f46e5;
+            --primary: #4f46e5;
+            --primary-accent: #6366f1;
             --primary-dark: #3730a3;
-            --secondary-color: #6b7280;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #3b82f6;
-            --light-bg: #f8fafc;
-            --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --bg-body: #f5f7fa;
+            --bg-surface: #ffffff;
+            --bg-soft: #f1f4f9;
+            --bg-alt: #eef3f9;
+            --text-main: #1f2937;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --border-strong: #d0d7e2;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --radius-xs: 4px;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.02);
+            --shadow: 0 2px 6px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+            --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.15), 0 2px 6px -2px rgba(0,0,0,.08);
+            --focus-ring: 0 0 0 3px rgba(99,102,241,.45);
+            --gradient-header: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+            --gradient-muted: linear-gradient(135deg,#f9fafb 0%,#f1f5f9 100%);
+            --transition: 140ms cubic-bezier(.4,0,.2,1);
         }
-        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0f172a;
+                --bg-surface: #1e293b;
+                --bg-soft: #203046;
+                --bg-alt: #1b2a41;
+                --text-main: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --border: #32455b;
+                --border-strong: #44596f;
+                --gradient-muted: linear-gradient(135deg,#1e293b 0%,#334155 100%);
+                --shadow-sm: 0 1px 2px rgba(0,0,0,.5);
+                --shadow: 0 2px 6px rgba(0,0,0,.55);
+                --shadow-hover: 0 6px 18px -4px rgba(0,0,0,.6);
+            }
+        }
+
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--light-bg);
-            color: #1f2937;
+            margin: 0;
+            font-family: 'Inter', system-ui, sans-serif;
             font-size: 14px;
+            background: var(--bg-body);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
         }
-        
-        /* Header */
+
+        /* Top Navigation */
         .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: none;
-            padding: 0.75rem 0;
+            background: var(--gradient-header) !important;
+            padding: .75rem 0;
+            border: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,.15);
         }
-        
         .navbar-brand {
             font-weight: 700;
-            font-size: 1.5rem;
+            letter-spacing: .5px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: .55rem;
         }
-        
-        /* Navigation Tabs */
+        .navbar .nav-link {
+            color: #e2e8f0 !important;
+            font-weight: 500;
+            transition: color var(--transition), opacity var(--transition);
+        }
+        .navbar .nav-link:hover,
+        .navbar .nav-link:focus-visible {
+            color: #fff !important;
+            outline: none;
+        }
+
+        /* Tabs */
         .nav-tabs-container {
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 0 1rem;
-            margin-bottom: 2rem;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
         }
-        
+        .nav-tabs {
+            gap: .25rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-tabs::-webkit-scrollbar { display: none; }
         .nav-tabs .nav-link {
             border: none;
-            border-radius: 0;
-            color: var(--secondary-color);
+            background: transparent;
+            color: var(--text-secondary);
             font-weight: 500;
-            padding: 1rem 1.5rem;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-tabs .nav-link:hover {
-            color: var(--primary-color);
-            border-color: transparent;
-            background: #f9fafb;
-        }
-        
-        .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            background: white;
-            border-color: transparent transparent var(--primary-color) transparent;
-            border-bottom: 3px solid var(--primary-color);
-        }
-        
-        /* Page Content */
-        .page-header {
-            margin-bottom: 2rem;
-            padding: 0 1rem;
-        }
-        
-        .page-title {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-        
-        .page-subtitle {
-            color: var(--secondary-color);
-            font-size: 1rem;
-        }
-        
-        /* Cards */
-        .card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.2s ease;
-        }
-        
-        .card:hover {
-            box-shadow: var(--card-shadow-hover);
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border-bottom: 1px solid #e5e7eb;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 1.25rem 1.5rem;
-        }
-        
-        .card-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0;
-        }
-        
-        /* Message specific styles */
-        .customer-list { 
-            max-height: 600px; 
-            overflow-y: auto; 
-        }
-        .messages-area { 
-            max-height: 450px; 
-            overflow-y: auto;
-            min-height: 300px;
-        }
-        
-        .customer-item {
-            transition: all 0.2s ease;
-            border-left: 3px solid transparent;
-        }
-        
-        .customer-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .customer-item.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-left-color: var(--primary-dark);
-        }
-        
-        .customer-item.active .text-muted {
-            color: rgba(255, 255, 255, 0.8) !important;
-        }
-        
-        .message-bubble {
-            max-width: 80%;
-            padding: 0.75rem 1rem;
-            border-radius: 18px;
-            margin-bottom: 0.5rem;
+            padding: .85rem 1.25rem;
             position: relative;
-            word-wrap: break-word;
+            white-space: nowrap;
+            transition: background var(--transition), color var(--transition);
         }
-        
-        .message-customer {
-            background: #f1f3f4;
-            color: #1f2937;
-            align-self: flex-start;
-            border-bottom-left-radius: 6px;
+        .nav-tabs .nav-link:hover {
+            color: var(--primary);
+            background: var(--bg-soft);
         }
-        
-        .message-admin {
-            background: var(--primary-color);
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 6px;
+        .nav-tabs .nav-link.active {
+            color: var(--primary);
         }
-        
-        .message-time {
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-top: 0.25rem;
+        .nav-tabs .nav-link.active::after,
+        .nav-tabs .nav-link:focus-visible::after {
+            content: "";
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: 4px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px;
         }
-        
-        .message-sender {
-            font-size: 0.75rem;
+
+        /* Page Header */
+        .page-header {
+            margin: 1.7rem 0 1.35rem;
+        }
+        .page-title {
+            font-size: clamp(1.35rem,1.1rem + 1.2vw,1.9rem);
+            font-weight: 700;
+            letter-spacing: .5px;
+            margin: 0 0 .45rem;
+        }
+        .page-subtitle {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: .92rem;
+        }
+
+        /* Card Base */
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow var(--transition), transform var(--transition);
+            overflow: hidden;
+        }
+        .card:hover { box-shadow: var(--shadow-hover); }
+        .card-header {
+            background: var(--gradient-muted);
+            border: 0;
+            padding: 1rem 1.15rem 1rem;
+        }
+        .card-title {
+            font-size: 1.02rem;
             font-weight: 600;
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: .55rem;
         }
-        
-        #replyMessage:focus {
-            box-shadow: none;
-            border-color: var(--primary-color);
+
+        /* Customer List Panel */
+        .customer-list {
+            max-height: 640px;
+            overflow-y: auto;
+            scrollbar-width: thin;
         }
-        
+        .customer-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .customer-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .customer-list::-webkit-scrollbar-thumb {
+            background: rgba(100,116,139,.35);
+            border-radius: 10px;
+        }
+        .customer-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(100,116,139,.55);
+        }
+        #searchCustomer {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            font-size: .8rem;
+            padding: .55rem .7rem;
+            border-radius: var(--radius-sm);
+            transition: border-color var(--transition), background var(--transition);
+        }
+        #searchCustomer:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--focus-ring);
+        }
+
+        .customer-item {
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: background var(--transition), border-color var(--transition);
+            background: linear-gradient(180deg,var(--bg-surface),var(--bg-surface));
+        }
+        .customer-item:hover {
+            background: var(--bg-soft);
+        }
+        .customer-item.active {
+            background: linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+            color: #fff;
+            border-left-color: var(--primary-accent);
+        }
+        .customer-item.active small.text-muted,
+        .customer-item.active p.text-muted {
+            color: rgba(255,255,255,.8) !important;
+        }
+        .customer-item .badge.bg-success {
+            background: var(--success) !important;
+        }
+
+        /* Avatar */
+        .customer-item .rounded-circle,
+        .chat-header-avatar {
+            box-shadow: 0 2px 6px -2px rgba(0,0,0,.35);
+        }
+
+        /* Chat Area */
+        .messages-area {
+            max-height: 480px;
+            min-height: 320px;
+            overflow-y: auto;
+            padding: .35rem .35rem 0;
+            scrollbar-width: thin;
+            scroll-behavior: smooth;
+        }
+        .messages-area::-webkit-scrollbar {
+            width: 10px;
+        }
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .messages-area::-webkit-scrollbar-thumb {
+            background: rgba(148,163,184,.35);
+            border-radius: 12px;
+        }
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(148,163,184,.55);
+        }
+
         .chat-messages {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: .65rem;
+            padding: .4rem .35rem 1.1rem;
         }
-        
+
+        .message-bubble {
+            max-width: 72%;
+            padding: .65rem .85rem .55rem;
+            border-radius: 18px;
+            position: relative;
+            font-size: .8rem;
+            line-height: 1.35;
+            display: flex;
+            flex-direction: column;
+            gap: .25rem;
+            word-break: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,.08);
+            animation: fadeUp .25s ease;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-customer {
+            background: var(--bg-soft);
+            color: var(--text-main);
+            border-top-left-radius: 6px;
+        }
+        .message-admin {
+            background: var(--primary);
+            color: #fff;
+            margin-left: auto;
+            border-top-right-radius: 6px;
+        }
+        .message-bubble.incoming-flash {
+            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+            animation: pulseNew 1.2s ease;
+        }
+        @keyframes pulseNew {
+            0% { box-shadow: 0 0 0 0 rgba(99,102,241,.45); }
+            70% { box-shadow: 0 0 0 10px rgba(99,102,241,0); }
+            100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+        }
+        .message-sender {
+            font-size: .6rem;
+            letter-spacing: .12em;
+            font-weight: 600;
+            text-transform: uppercase;
+            opacity: .7;
+        }
+        .message-time {
+            font-size: .58rem;
+            opacity: .6;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        /* Empty States */
+        .empty-block {
+            width: 100%;
+            height: 100%;
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1rem;
+        }
+        .empty-block i {
+            opacity: .35;
+            color: var(--text-secondary);
+        }
+        .empty-block h5 {
+            margin-top: .9rem;
+            font-weight: 600;
+            margin-bottom: .35rem;
+        }
+        .empty-block p {
+            font-size: .75rem;
+            margin: 0;
+            color: var(--text-secondary);
+        }
+
+        /* Reply Area */
+        #replyArea {
+            border-top: 1px solid var(--border);
+            background: var(--bg-soft);
+            padding: .75rem .75rem .75rem;
+        }
+        #replyMessage {
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            font-size: .8rem;
+            padding: .55rem .7rem;
+            border-radius: var(--radius-md);
+            transition: border-color var(--transition), background var(--transition);
+        }
+        #replyMessage:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--focus-ring);
+            background: #fff;
+        }
+        #sendButton {
+            font-weight: 600;
+            letter-spacing: .5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+        }
+
+        /* Notification badge reused */
+        .new-message-badge {
+            will-change: transform, opacity;
+        }
+        .new-message-badge:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        /* Focus / Accessibility */
+        a:focus-visible,
+        button:focus-visible,
+        .customer-item:focus-visible,
+        .nav-link:focus-visible,
+        textarea:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
         /* Responsive */
+        @media (max-width: 1200px) {
+            .messages-area { max-height: 460px; }
+        }
+        @media (max-width: 992px) {
+            .customer-list { max-height: 320px; }
+            .messages-area { max-height: 400px; }
+        }
         @media (max-width: 768px) {
-            .page-title {
-                font-size: 1.5rem;
-            }
-            
-            .nav-tabs .nav-link {
-                padding: 0.75rem 1rem;
+            .page-header { margin: 1.25rem 0 1rem; }
+            .messages-area { max-height: 360px; }
+            .customer-item { padding: .85rem .9rem !important; }
+            .message-bubble { max-width: 85%; }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            .message-bubble,
+            .customer-item,
+            .card {
+                transition: none !important;
+                animation: none !important;
             }
         }
     </style>
 </head>
-
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="/admin/dashboard">
-                <i class="fas fa-mobile-alt me-2"></i>Repairo
+                <i class="fas fa-mobile-alt"></i>
+                <span>Repairo</span>
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <a class="nav-link d-flex align-items-center gap-2" href="/logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
                 </a>
             </div>
         </div>
     </nav>
 
-    <!-- Navigation Tabs -->
+    <!-- Tabs -->
     <div class="nav-tabs-container">
-        <ul class="nav nav-tabs">
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/dashboard">
-                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/customers">
-                    <i class="fas fa-users me-2"></i>Customers
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link active" href="/admin/messages">
-                    <i class="fas fa-comments me-2"></i>Messages
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/repairs">
-                    <i class="fas fa-tools me-2"></i>Repairs
-                </a>
-            </li>
-        </ul>
+        <div class="container-fluid px-4">
+            <ul class="nav nav-tabs flex-nowrap">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/customers">
+                        <i class="fas fa-users me-2"></i>Customers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/admin/messages">
+                        <i class="fas fa-comments me-2"></i>Messages
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/repairs">
+                        <i class="fas fa-tools me-2"></i>Repairs
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="container-fluid px-4 pb-4">
-        <!-- Page Header -->
-        <div class="page-header">
+    <!-- Main -->
+    <main class="container-fluid px-4 pb-5">
+        <header class="page-header">
             <h1 class="page-title">Customer Messages</h1>
-            <p class="page-subtitle">Manage customer communications and provide real-time support.</p>
-        </div>
-        
-        <div class="row">
+            <p class="page-subtitle">Manage customer conversations.</p>
+        </header>
+
+        <div class="row g-4">
             <!-- Customer List -->
-            <div class="col-lg-4 col-md-5 mb-4">
+            <div class="col-lg-4 col-md-5">
                 <div class="card h-100">
                     <div class="card-header">
-                        <h5 class="card-title">
-                            <i class="fas fa-users me-2"></i>Customers
-                        </h5>
+                        <h5 class="card-title"><i class="fas fa-users"></i>Customers</h5>
                         <div class="mt-3">
-                            <input type="text" class="form-control" id="searchCustomer" 
-                                   placeholder="Search customers..." onkeyup="filterCustomers()">
+                            <input type="text" id="searchCustomer" placeholder="Search..." class="w-100"
+                                   onkeyup="MessagesApp.filterCustomers()"/>
                         </div>
                     </div>
                     <div class="card-body p-0 customer-list">
                         <div th:if="${customers != null and !customers.empty}">
-                            <div th:each="customer, iterStat : ${customers}" 
+                            <div th:each="customer, iterStat : ${customers}"
                                  class="customer-item p-3 border-bottom"
                                  th:classappend="${iterStat.index == 0} ? 'active' : ''"
                                  th:data-customer-id="${customer.customerId}"
-                                 onclick="selectCustomer(this)"
-                                 style="cursor: pointer;">
-                                
+                                 onclick="MessagesApp.selectCustomer(this)">
+
                                 <div class="d-flex align-items-center">
                                     <div class="me-3">
-                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                                             style="width: 45px; height: 45px; font-weight: 600;">
+                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                             style="width: 46px; height: 46px; font-weight: 600;">
                                             <span th:text="${customer.name != null ? customer.name.substring(0,1).toUpperCase() : 'U'}">U</span>
                                         </div>
                                     </div>
-                                    <div class="flex-grow-1">
+                                    <div class="flex-grow-1 min-width-0">
                                         <div class="d-flex justify-content-between align-items-start">
-                                            <h6 class="mb-1 fw-semibold" th:text="${customer.name}">Customer Name</h6>
-                                            <small class="text-muted" th:if="${customer.messages != null and !customer.messages.empty}"
+                                            <h6 class="mb-1 fw-semibold text-truncate" th:text="${customer.name}">Customer Name</h6>
+                                            <small class="text-muted"
+                                                   th:if="${customer.messages != null and !customer.messages.empty}"
                                                    th:text="${#temporals.format(customer.messages[customer.messages.size() - 1].timestamp, 'HH:mm')}">
                                                 Time
                                             </small>
                                         </div>
-                                        <p class="mb-1 text-muted small" th:text="${customer.phone}">Phone</p>
-                                        <small class="text-muted" th:if="${customer.messages != null and !customer.messages.empty}"
+                                        <p class="mb-1 text-muted small text-truncate" th:text="${customer.phone}">Phone</p>
+                                        <small class="text-muted d-block text-truncate"
+                                               th:if="${customer.messages != null and !customer.messages.empty}"
                                                th:text="${customer.messages[customer.messages.size() - 1].text.length() > 35 
                                                        ? customer.messages[customer.messages.size() - 1].text.substring(0, 35) + '...'
                                                        : customer.messages[customer.messages.size() - 1].text}">
@@ -311,52 +520,58 @@
                                                class="text-muted">No messages yet</small>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
-                        <div th:if="${customers == null or customers.empty}" class="p-5 text-center text-muted">
-                            <i class="fas fa-comments mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
-                            <h6>No customers with messages yet</h6>
-                            <p class="mb-0 small">Customer conversations will appear here when they contact you.</p>
+                        <div th:if="${customers == null or customers.empty}" class="empty-block">
+                            <div>
+                                <i class="fas fa-comments mb-3" style="font-size:3rem;"></i>
+                                <h6>No Conversations</h6>
+                                <p>Messages will appear when customers reach out.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Messages Area -->
+            <!-- Chat Panel -->
             <div class="col-lg-8 col-md-7">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center" id="chatHeader" style="display: none !important;">
-                        <div class="me-3">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                                 style="width: 40px; height: 40px; font-weight: 600;" id="customerAvatar">
+                <div class="card h-100 d-flex">
+                    <div class="card-header d-flex align-items-center gap-3" id="chatHeader" style="display:none;">
+                        <div>
+                            <div id="customerAvatar"
+                                 class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center chat-header-avatar"
+                                 style="width:44px;height:44px;font-weight:600;">
                                 U
                             </div>
                         </div>
-                        <div>
-                            <h5 class="card-title mb-0" id="customerName">Customer Name</h5>
-                            <small id="customerPhone" class="text-muted">Phone Number</small>
+                        <div class="flex-grow-1 min-width-0">
+                            <h5 class="card-title mb-0 d-flex align-items-center gap-2" id="customerName">Customer Name</h5>
+                            <small id="customerPhone" class="text-secondary d-block mt-1" style="font-size:.68rem; letter-spacing:.08em;">Phone Number</small>
                         </div>
                     </div>
-                    <div class="card-body d-flex flex-column">
+
+                    <div class="card-body d-flex flex-column pt-0">
                         <!-- Empty State -->
-                        <div id="emptyState" class="d-flex align-items-center justify-content-center flex-grow-1 text-center text-muted">
+                        <div id="emptyState" class="empty-block flex-grow-1">
                             <div>
-                                <i class="fas fa-comment-dots mb-3" style="font-size: 4rem; opacity: 0.3;"></i>
+                                <i class="fas fa-comment-dots mb-3" style="font-size:4rem;"></i>
                                 <h5>Select a Customer</h5>
-                                <p class="mb-0">Choose a customer from the list to view their messages and start chatting.</p>
+                                <p>Choose from the list to view messages.</p>
                             </div>
                         </div>
 
-                        <!-- Messages -->
-                        <div id="messagesContainer" class="flex-grow-1 messages-area mb-3" style="display: none;">
-                            <!-- Messages will be loaded here -->
+                        <!-- Messages Container -->
+                        <div id="messagesContainer" class="flex-grow-1 messages-area mb-2" style="display:none;">
+                            <!-- Dynamic chat -->
                         </div>
                     </div>
-                    <div class="card-footer" id="replyArea" style="display: none;">
+
+                    <div class="card-footer" id="replyArea" style="display:none;">
                         <div class="input-group">
-                            <textarea id="replyMessage" class="form-control" rows="2" 
-                                      placeholder="Type your message..." style="resize: none;"></textarea>
-                            <button class="btn btn-primary px-4" id="sendButton" onclick="sendMessage()">
+                            <textarea id="replyMessage" class="form-control" rows="2" placeholder="Type message..."
+                                      style="resize:none;"></textarea>
+                            <button class="btn btn-primary px-4" id="sendButton" onclick="MessagesApp.sendMessage()">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
@@ -364,533 +579,430 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Scripts -->
+    <!-- Vendor JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Messaging Logic (kept: only minimal safe enhancements) -->
     <script th:inline="javascript">
-        // Initialize variables
-        let currentCustomerId = null;
-        window.customers = [];
-        
-        // Function to get CSRF token from cookie
-        function getCsrfToken() {
-            const name = 'XSRF-TOKEN=';
-            const decodedCookie = decodeURIComponent(document.cookie);
-            const ca = decodedCookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') {
-                    c = c.substring(1);
+        const MessagesApp = {
+            state: {
+                currentCustomerId: null,
+                customers: [],
+                lastChecked: null,
+                isPolling: false,
+                justSentMessage: false
+            },
+            config: {
+                pollingInterval: 3000,
+                messageAfterSendDelay: 100,
+                notificationResetDelay: 2000
+            },
+            elements: {},
+            polling: { interval: null },
+
+            init() {
+                this.cacheElements();
+                this.setupEventListeners();
+                this.initializeLastChecked();
+                this.performInitialLoad();
+            },
+            cacheElements() {
+                this.elements = {
+                    customerList: document.querySelector('.customer-list'),
+                    searchCustomer: document.getElementById('searchCustomer'),
+                    chatHeader: document.getElementById('chatHeader'),
+                    customerName: document.getElementById('customerName'),
+                    customerPhone: document.getElementById('customerPhone'),
+                    customerAvatar: document.getElementById('customerAvatar'),
+                    emptyState: document.getElementById('emptyState'),
+                    messagesContainer: document.getElementById('messagesContainer'),
+                    replyArea: document.getElementById('replyArea'),
+                    replyMessage: document.getElementById('replyMessage'),
+                    sendButton: document.getElementById('sendButton')
+                };
+            },
+            setupEventListeners() {
+                if (this.elements.replyMessage) {
+                    this.elements.replyMessage.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            this.sendMessage();
+                        }
+                    });
                 }
-                if (c.indexOf(name) == 0) {
-                    return c.substring(name.length, c.length);
+                document.addEventListener('visibilitychange', () => {
+                    document.hidden ? this.stopPolling() : this.startPolling();
+                });
+                window.addEventListener('beforeunload', () => this.stopPolling());
+            },
+            initializeLastChecked() {
+                this.state.lastChecked = new Date().toISOString();
+                console.log('📅 lastChecked initialized:', this.state.lastChecked);
+            },
+            performInitialLoad() {
+                this.checkForNewMessages(true)
+                    .then(() => {
+                        this.selectFirstCustomer();
+                        this.startPolling();
+                    })
+                    .catch(() => {
+                        this.handleInitialLoadFallback();
+                        this.startPolling();
+                    });
+            },
+            selectFirstCustomer() {
+                if (this.state.customers && this.state.customers.length > 0) {
+                    const first = document.querySelector('.customer-item');
+                    if (first) this.selectCustomer(first);
                 }
-            }
-            return '';
-        }
-        
-        // Auto-select first customer if available and initialize polling
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize lastChecked based on the most recent message timestamp
-            initializeLastCheckedTimestamp();
-            
-            // First, perform a silent initial check to establish baseline
-            checkForNewMessages(true).then(() => {
-                // After customers are loaded, select the first one if available
-                if (window.customers && window.customers.length > 0) {
-                    const firstCustomer = document.querySelector('.customer-item');
-                    if (firstCustomer) {
-                        selectCustomer(firstCustomer);
-                    }
-                }
-                
-                // Start polling after initial load
-                startMessagePolling();
-            }).catch(() => {
-                // Fallback: try to select first customer from HTML and start polling
+            },
+            handleInitialLoadFallback() {
                 const firstCustomer = document.querySelector('.customer-item');
                 if (firstCustomer) {
-                    // Build customers array from existing HTML elements
-                    const customerElements = document.querySelectorAll('.customer-item');
-                    window.customers = Array.from(customerElements).map(el => ({
+                    const els = document.querySelectorAll('.customer-item');
+                    this.state.customers = Array.from(els).map(el => ({
                         customerId: el.dataset.customerId,
-                        name: el.querySelector('h6').textContent.trim(),
-                        phone: el.querySelectorAll('p')[0].textContent.trim(),
-                        messages: [] // Will be populated by polling
+                        name: el.querySelector('h6')?.textContent.trim(),
+                        phone: el.querySelector('p')?.textContent.trim(),
+                        messages: []
                     }));
-                    
-                    selectCustomer(firstCustomer);
+                    this.selectCustomer(firstCustomer);
                 }
-                startMessagePolling();
-            });
-        });
-        
-        function selectCustomer(element) {
-            // Remove active from all customers
-            document.querySelectorAll('.customer-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active to selected
-            element.classList.add('active');
-            
-            // Get customer ID and store globally
-            window.currentCustomerId = element.dataset.customerId;
-            
-            // Find customer data from global customers array
-            const customer = window.customers ? window.customers.find(c => c.customerId === window.currentCustomerId) : null;
-            if (!customer) {
-                console.warn('Customer not found:', window.currentCustomerId);
-                return;
-            }
-            
-            // Update header
-            document.getElementById('customerName').textContent = customer.name || 'Unknown Customer';
-            document.getElementById('customerPhone').textContent = customer.phone;
-            document.getElementById('customerAvatar').textContent = customer.name ? customer.name.substring(0,1).toUpperCase() : 'U';
-            
-            // Show/hide elements
-            document.getElementById('chatHeader').style.display = 'flex';
-            document.getElementById('emptyState').style.display = 'none';
-            document.getElementById('messagesContainer').style.display = 'block';
-            document.getElementById('replyArea').style.display = 'block';
-            
-            // Load messages
-            loadMessages(customer);
-        }
-        
-        // Make selectCustomer globally available for inline onclick handlers
-        window.selectCustomer = selectCustomer;
-        
-        function initializeLastCheckedTimestamp() {
-            // Set lastChecked to current time to prevent existing messages from being marked as "new"
-            // Only messages that arrive after the page loads should be considered new
-            lastChecked = new Date().toISOString();
-            console.log('Initialized lastChecked to current time:', lastChecked);
-        }
-        
-        function loadMessages(customer) {
-            const container = document.getElementById('messagesContainer');
-            container.innerHTML = '';
-            
-            if (!customer.messages || customer.messages.length === 0) {
-                container.innerHTML = `
-                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                        <div class="text-center">
-                            <i class="fas fa-comments mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                            <p class="mb-0">No messages yet</p>
-                            <small>Start the conversation!</small>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-            
-            const chatDiv = document.createElement('div');
-            chatDiv.className = 'chat-messages d-flex flex-column';
-            
-            customer.messages.forEach(message => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message-bubble ' + (message.from === 'customer' ? 'message-customer' : 'message-admin');
-                
-                const time = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                const isAdmin = message.from === 'admin';
-                
-                messageDiv.innerHTML = `
-                    <div class="message-sender">${isAdmin ? 'You' : customer.name || 'Customer'}</div>
-                    <div class="message-text">${escapeHtml(message.text)}</div>
-                    <div class="message-time">${time}</div>
-                `;
-                
-                chatDiv.appendChild(messageDiv);
-            });
-            
-            container.appendChild(chatDiv);
-            
-            // Scroll to bottom
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        function sendMessage() {
-            const textarea = document.getElementById('replyMessage');
-            const button = document.getElementById('sendButton');
-            const message = textarea.value.trim();
-            
-            if (!message || !window.currentCustomerId) {
-                alert('Please enter a message');
-                return;
-            }
+            },
 
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            
-            fetch('/admin/send-message', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `customerId=${window.currentCustomerId}&message=${encodeURIComponent(message)}`
-            })
-            .then(response => response.text())
-            .then(data => {
-                if (data === 'success') {
-                    textarea.value = '';
-                    // Instead of refreshing, manually add the message to the UI
-                    addMessageToCurrentChat('admin', message);
-                    
-                    // Set flag to prevent showing notification for this message
-                    justSentMessage = true;
-                    
-                    // Update lastChecked to current time to prevent treating admin messages as "new"
-                    lastChecked = new Date().toISOString();
-                    
-                    // Force a check for updates to refresh customer list (but won't show notification for admin message)
-                    setTimeout(() => {
-                        checkForNewMessages(true); // Use silent mode to avoid notification
-                        // Reset flag after a short delay
-                        setTimeout(() => {
-                            justSentMessage = false;
-                        }, 2000);
-                    }, 100); // Small delay to ensure the message is processed on server
-                } else {
-                    alert('Failed to send message: ' + data);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to send message');
-            })
-            .finally(() => {
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-paper-plane"></i>';
-            });
-        }
-        
-        function filterCustomers() {
-            const search = document.getElementById('searchCustomer').value.toLowerCase();
-            const customers = document.querySelectorAll('.customer-item');
-            
-            customers.forEach(customer => {
-                const name = customer.querySelector('h6').textContent.toLowerCase();
-                const phone = customer.querySelector('p').textContent.toLowerCase();
-                
-                if (name.includes(search) || phone.includes(search)) {
-                    customer.style.display = 'block';
-                } else {
-                    customer.style.display = 'none';
-                }
-            });
-        }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        function addMessageToCurrentChat(from, text) {
-            if (!window.currentCustomerId) return;
-            
-            const container = document.getElementById('messagesContainer');
-            const chatDiv = container.querySelector('.chat-messages');
-            
-            if (!chatDiv) {
-                // If no chat exists yet, create one
-                const newChatDiv = document.createElement('div');
-                newChatDiv.className = 'chat-messages d-flex flex-column';
-                container.innerHTML = '';
-                container.appendChild(newChatDiv);
-            }
-            
-            const currentCustomer = window.customers.find(c => c.customerId === window.currentCustomerId);
-            const customerName = currentCustomer ? currentCustomer.name : 'Customer';
-            
-            // Create new message element
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message-bubble ' + (from === 'customer' ? 'message-customer' : 'message-admin');
-            
-            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const isAdmin = from === 'admin';
-            
-            messageDiv.innerHTML = `
-                <div class="message-sender">${isAdmin ? 'You' : customerName}</div>
-                <div class="message-text">${escapeHtml(text)}</div>
-                <div class="message-time">${time}</div>
-            `;
-            
-            // Add to chat
-            const currentChatDiv = container.querySelector('.chat-messages');
-            if (currentChatDiv) {
-                currentChatDiv.appendChild(messageDiv);
-            }
-            
-            // Scroll to bottom
-            container.scrollTop = container.scrollHeight;
-            
-            // Update the customer's messages array in memory
-            if (currentCustomer) {
-                if (!currentCustomer.messages) {
-                    currentCustomer.messages = [];
-                }
-                currentCustomer.messages.push({
-                    from: from,
-                    text: text,
-                    timestamp: new Date().toISOString()
+            /* CUSTOMER SELECTION */
+            selectCustomer(element) {
+                console.log('👤 Selecting customer', element.dataset.customerId);
+                document.querySelectorAll('.customer-item').forEach(i => i.classList.remove('active'));
+                element.classList.add('active');
+                this.state.currentCustomerId = element.dataset.customerId;
+                const customer = this.state.customers.find(c => c.customerId === this.state.currentCustomerId);
+                if (!customer) return;
+                this.updateChatHeader(customer);
+                this.showChatInterface();
+                this.loadMessages(customer);
+            },
+            updateChatHeader(customer) {
+                this.elements.customerName.textContent = customer.name || 'Customer';
+                this.elements.customerPhone.textContent = customer.phone || '';
+                this.elements.customerAvatar.textContent = customer.name
+                    ? customer.name.substring(0,1).toUpperCase()
+                    : 'U';
+            },
+            showChatInterface() {
+                this.elements.chatHeader.style.display = 'flex';
+                this.elements.emptyState.style.display = 'none';
+                this.elements.messagesContainer.style.display = 'block';
+                this.elements.replyArea.style.display = 'block';
+            },
+            filterCustomers() {
+                const term = this.elements.searchCustomer.value.toLowerCase();
+                document.querySelectorAll('.customer-item').forEach(item => {
+                    const name = item.querySelector('h6')?.textContent.toLowerCase() || '';
+                    const phone = item.querySelector('p')?.textContent.toLowerCase() || '';
+                    item.style.display = (name.includes(term) || phone.includes(term)) ? 'block' : 'none';
                 });
-            }
-        }
-        
-        // Handle Enter key in textarea
-        document.getElementById('replyMessage').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-        
-        // Auto-update functionality for new messages
-        let lastChecked = null; // Will be initialized based on latest message
-        let pollingInterval;
-        let isPolling = false;
-        let justSentMessage = false; // Flag to prevent notification after sending message
-        
-        function startMessagePolling() {
-            if (isPolling) return;
-            
-            isPolling = true;
-            pollingInterval = setInterval(checkForNewMessages, 3000); // Check every 3 seconds
-            console.log('Started message polling every 3 seconds');
-        }
-        
-        function stopMessagePolling() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-                isPolling = false;
-                console.log('Stopped message polling');
-            }
-        }
-        
-        function checkForNewMessages(silent = false) {
-            return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(lastChecked)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (!silent) {
-                        console.log('Polling response:', data);
-                    }
-                    
-                    if (data.success) {
-                        // Always update customers data
-                        if (data.customers) {
-                            window.customers = data.customers;
-                        }
-                        
-                        // Only show notification for customer messages, not admin messages, and not in silent mode
-                        if (data.hasNewMessages && data.newMessageCount > 0 && !silent && !justSentMessage) {
-                            console.log(`Found ${data.newMessageCount} new customer messages`);
-                            
-                            // Show notification only if there are actually new customer messages
-                            showNewMessageNotification(data.newMessageCount);
-                            
-                            // Update the entire customer list with fresh data
-                            if (data.customers && data.customers.length > 0) {
-                                refreshCustomerList(data.customers);
-                            }
-                        } else if (data.customers && data.customers.length > 0) {
-                            // Even without new messages, update customer list to reflect any admin message sends
-                            refreshCustomerList(data.customers);
-                        }
-                        
-                        // Always update last checked timestamp to prevent considering old messages as new
-                        if (data.timestamp) {
-                            lastChecked = data.timestamp;
-                        }
-                        
-                        return data;
+            },
+
+            /* MESSAGES */
+            loadMessages(customer) {
+                const container = this.elements.messagesContainer;
+                if (!container) return;
+                container.innerHTML = '';
+                if (!customer.messages || customer.messages.length === 0) {
+                    this.showEmptyMessages();
+                    return;
+                }
+                const chatDiv = this.createMessagesContainer();
+                this.renderMessages(customer.messages, customer.name, chatDiv);
+                container.appendChild(chatDiv);
+                this.scrollToBottom();
+            },
+            showEmptyMessages() {
+                this.elements.messagesContainer.innerHTML = `
+                    <div class="empty-block" style="min-height:260px;">
+                        <div>
+                            <i class="fas fa-comments mb-2" style="font-size:2.4rem;"></i>
+                            <p class="mb-0">No messages yet</p>
+                        </div>
+                    </div>`;
+            },
+            createMessagesContainer() {
+                const div = document.createElement('div');
+                div.className = 'chat-messages';
+                return div;
+            },
+            renderMessages(messages, customerName, container) {
+                messages.forEach(m => {
+                    const el = this.createMessageElement(m, customerName);
+                    container.appendChild(el);
+                });
+            },
+            createMessageElement(message, customerName) {
+                const wrap = document.createElement('div');
+                wrap.className = 'message-bubble ' + (message.from === 'customer' ? 'message-customer incoming-flash' : 'message-admin');
+                const time = new Date(message.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                const isAdmin = message.from === 'admin';
+                wrap.innerHTML = `
+                    <div class="message-sender">${isAdmin ? 'You' : (customerName || 'Customer')}</div>
+                    <div class="message-text">${this.escapeHtml(message.text)}</div>
+                    <div class="message-time">${time}</div>`;
+                if (isAdmin) wrap.classList.remove('incoming-flash');
+                return wrap;
+            },
+            addMessageToCurrentChat(from, text) {
+                if (!this.state.currentCustomerId) return;
+                let chatDiv = this.elements.messagesContainer.querySelector('.chat-messages');
+                if (!chatDiv) {
+                    chatDiv = this.createMessagesContainer();
+                    this.elements.messagesContainer.innerHTML = '';
+                    this.elements.messagesContainer.appendChild(chatDiv);
+                }
+                const currentCustomer = this.state.customers.find(c => c.customerId === this.state.currentCustomerId);
+                const name = currentCustomer ? currentCustomer.name : 'Customer';
+                const el = this.createMessageElement({
+                    from,
+                    text,
+                    timestamp: new Date().toISOString()
+                }, name);
+                chatDiv.appendChild(el);
+                this.scrollToBottom();
+                if (currentCustomer) {
+                    currentCustomer.messages = currentCustomer.messages || [];
+                    currentCustomer.messages.push({
+                        from,
+                        text,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            },
+            sendMessage() {
+                const val = this.elements.replyMessage.value.trim();
+                if (!val || !this.state.currentCustomerId) {
+                    alert('Please enter a message');
+                    return;
+                }
+                console.log('📤 Sending:', val.slice(0,40));
+                this.disableSendButton();
+                fetch('/admin/send-message', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+                    body: `customerId=${this.state.currentCustomerId}&message=${encodeURIComponent(val)}`
+                })
+                .then(r=>r.text())
+                .then(res=>{
+                    if (res === 'success') {
+                        this.handleMessageSentSuccess(val);
                     } else {
-                        if (!silent) {
-                            console.error('Polling failed:', data.error);
-                        }
-                        throw new Error(data.error || 'Polling failed');
+                        alert('Failed to send message: ' + res);
                     }
                 })
-                .catch(error => {
-                    if (!silent) {
-                        console.error('Error checking for new messages:', error);
-                    }
-                    throw error;
-                });
-        }
-        
-        function showNewMessageNotification(count) {
-            // Create or update notification badge
-            let badge = document.querySelector('.new-message-badge');
-            if (!badge) {
-                badge = document.createElement('div');
+                .catch(err=>{
+                    console.error('❌ Send error', err);
+                    alert('Failed to send message');
+                })
+                .finally(()=> this.enableSendButton());
+            },
+            handleMessageSentSuccess(message) {
+                console.log('✅ Message sent');
+                this.elements.replyMessage.value = '';
+                this.addMessageToCurrentChat('admin', message);
+                this.state.justSentMessage = true;
+                this.state.lastChecked = new Date().toISOString();
+                setTimeout(()=>{
+                    this.checkForNewMessages(true);
+                    setTimeout(()=> this.state.justSentMessage = false, this.config.notificationResetDelay);
+                }, this.config.messageAfterSendDelay);
+            },
+            disableSendButton() {
+                this.elements.sendButton.disabled = true;
+                this.elements.sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            },
+            enableSendButton() {
+                this.elements.sendButton.disabled = false;
+                this.elements.sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            },
+
+            /* POLLING */
+            startPolling() {
+                if (this.state.isPolling) return;
+                this.state.isPolling = true;
+                this.polling.interval = setInterval(()=> this.checkForNewMessages(), this.config.pollingInterval);
+                console.log('🔄 Polling started every', this.config.pollingInterval + 'ms');
+            },
+            stopPolling() {
+                if (this.polling.interval) {
+                    clearInterval(this.polling.interval);
+                    this.polling.interval = null;
+                    this.state.isPolling = false;
+                    console.log('⏸️ Polling stopped');
+                }
+            },
+            checkForNewMessages(silent = false) {
+                return fetch(`/admin/check-new-messages?lastChecked=${encodeURIComponent(this.state.lastChecked)}`)
+                    .then(r=>r.json())
+                    .then(data=>{
+                        if (!silent) console.log('📨 Polling response:', data);
+                        if (data.success) {
+                            this.handlePollingSuccess(data, silent);
+                            return data;
+                        }
+                        throw new Error(data.error || 'Polling failed');
+                    })
+                    .catch(err=>{
+                        if (!silent) console.error('❌ Polling error', err);
+                        throw err;
+                    });
+            },
+            handlePollingSuccess(data, silent) {
+                if (data.customers) {
+                    this.state.customers = data.customers;
+                }
+                if (data.hasNewMessages && data.newMessageCount > 0 && !silent && !this.state.justSentMessage) {
+                    console.log(`🆕 ${data.newMessageCount} new messages`);
+                    this.showNewMessageNotification(data.newMessageCount);
+                }
+                if (data.customers && data.customers.length > 0) {
+                    this.refreshCustomerList(data.customers);
+                }
+                if (data.timestamp) {
+                    this.state.lastChecked = data.timestamp;
+                }
+            },
+
+            /* UI UPDATES */
+            showNewMessageNotification(count) {
+                const existing = document.querySelector('.new-message-badge');
+                if (existing) existing.remove();
+                const badge = document.createElement('button');
+                badge.type = 'button';
                 badge.className = 'new-message-badge';
                 badge.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #10b981;
-                    color: white;
-                    padding: 0.75rem 1rem;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    z-index: 1050;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
+                    position:fixed;
+                    top:20px;
+                    right:20px;
+                    background:var(--success);
+                    color:#fff;
+                    padding:.75rem 1rem;
+                    border-radius:10px;
+                    font-weight:600;
+                    font-size:.8rem;
+                    display:flex;
+                    align-items:center;
+                    gap:.5rem;
+                    border:none;
+                    cursor:pointer;
+                    box-shadow:0 6px 18px -4px rgba(16,185,129,.55),0 2px 6px -2px rgba(0,0,0,.35);
+                    z-index:1050;
+                    letter-spacing:.4px;
+                    transition:background .25s,transform .25s;
                 `;
+                badge.innerHTML = `<i class="fas fa-comments"></i><span>${count} new message${count>1?'s':''} • Refresh</span>`;
+                badge.addEventListener('click', ()=> location.reload());
+                badge.addEventListener('mouseenter', ()=> badge.style.transform='translateY(-2px)');
+                badge.addEventListener('mouseleave', ()=> badge.style.transform='');
                 document.body.appendChild(badge);
-                
-                // Auto-hide after 10 seconds
-                setTimeout(() => {
-                    if (badge && badge.parentNode) {
-                        badge.style.opacity = '0';
-                        setTimeout(() => badge.remove(), 300);
+                setTimeout(()=>{
+                    if (badge.isConnected){
+                        badge.style.opacity='0';
+                        badge.style.transform='translateY(-4px)';
+                        setTimeout(()=> badge.remove(), 320);
                     }
-                }, 10000);
-                
-                // Click to refresh page
-                badge.addEventListener('click', () => {
-                    location.reload();
-                });
-            }
-            
-            badge.innerHTML = `<i class="fas fa-comments me-2"></i>${count} new message${count > 1 ? 's' : ''}! Click to refresh`;
-            badge.style.opacity = '1';
-        }
-        
-        function updateCustomerList(customers) {
-            // Update the customer list in the sidebar
-            const customerList = document.querySelector('.customer-list');
-            if (!customerList) return;
-            
-            // Add visual indicator for customers with new messages
-            customers.forEach(customer => {
-                if (customer.messages && customer.messages.length > 0) {
-                    // Find the customer item in the list
-                    const customerItem = document.querySelector(`[data-customer-id="${customer.customerId}"]`);
-                    if (customerItem && !customerItem.querySelector('.new-message-indicator')) {
-                        // Add new message indicator
-                        const indicator = document.createElement('div');
-                        indicator.className = 'new-message-indicator';
-                        indicator.innerHTML = '<i class="fas fa-circle text-primary"></i>';
-                        indicator.style.cssText = 'position: absolute; top: 10px; right: 10px; font-size: 8px;';
-                        customerItem.style.position = 'relative';
-                        customerItem.appendChild(indicator);
-                    }
+                },10000);
+            },
+            refreshCustomerList(customers) {
+                const list = this.elements.customerList;
+                if (!list) return;
+                this.state.customers = customers;
+                window.customers = customers; // legacy
+                list.innerHTML = '';
+                if (customers.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-block" style="min-height:220px;">
+                            <div>
+                                <i class="fas fa-users mb-2" style="font-size:2.2rem;"></i>
+                                <p class="mb-0">No customers</p>
+                            </div>
+                        </div>`;
+                    return;
                 }
-            });
-        }
-        
-        function refreshCustomerList(customers) {
-            console.log('Refreshing customer list with', customers.length, 'customers');
-            
-            const customerList = document.querySelector('.customer-list');
-            if (!customerList) {
-                console.warn('Customer list element not found');
-                return;
-            }
-            
-            // Store customers globally for selectCustomer function
-            window.customers = customers;
-            
-            // Clear existing list
-            customerList.innerHTML = '';
-            
-            if (customers.length === 0) {
-                customerList.innerHTML = `
-                    <div class="text-center p-4 text-muted">
-                        <i class="fas fa-users mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                        <p class="mb-0">No customers yet</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Rebuild customer list
-            customers.forEach((customer, index) => {
-                const lastMessage = customer.messages && customer.messages.length > 0 
-                    ? customer.messages[customer.messages.length - 1] 
+                customers.forEach(c => {
+                    const item = this.createCustomerListItem(c);
+                    list.appendChild(item);
+                });
+                this.refreshSelectedCustomer();
+            },
+            createCustomerListItem(customer) {
+                const last = customer.messages && customer.messages.length
+                    ? customer.messages[customer.messages.length - 1]
                     : null;
-                
-                const lastMessageText = lastMessage 
-                    ? (lastMessage.text.length > 30 ? lastMessage.text.substring(0, 30) + '...' : lastMessage.text)
+                const lastText = last
+                    ? (last.text.length > 35 ? last.text.substring(0,35) + '...' : last.text)
                     : 'No messages';
-                
-                const lastMessageTime = lastMessage 
-                    ? new Date(lastMessage.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                const lastTime = last
+                    ? new Date(last.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
                     : '';
-                
-                // Check if message is truly new (within last 30 seconds and from customer)
-                const isNew = lastMessage && 
-                             lastMessage.from === 'customer' &&
-                             new Date(lastMessage.timestamp) > new Date(Date.now() - 30000);
-                             
-                const isCurrentlySelected = window.currentCustomerId === customer.customerId;
-                
-                const customerItem = document.createElement('div');
-                customerItem.className = `customer-item p-3 border-bottom cursor-pointer ${isCurrentlySelected ? 'active' : ''}`;
-                customerItem.setAttribute('data-customer-id', customer.customerId);
-                customerItem.onclick = () => selectCustomer(customerItem);
-                
-                customerItem.innerHTML = `
+                const isNew = last &&
+                               last.from === 'customer' &&
+                               new Date(last.timestamp) > new Date(Date.now() - 30000);
+                const active = this.state.currentCustomerId === customer.customerId;
+                const node = document.createElement('div');
+                node.className = `customer-item p-3 border-bottom ${active ? 'active':''}`;
+                node.dataset.customerId = customer.customerId;
+                node.onclick = () => this.selectCustomer(node);
+                node.innerHTML = `
                     <div class="d-flex align-items-center">
                         <div class="me-3">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                                 style="width: 40px; height: 40px; font-weight: 600;">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width:42px;height:42px;font-weight:600;">
                                 <span>${customer.name ? customer.name.substring(0,1).toUpperCase() : 'U'}</span>
                             </div>
                         </div>
                         <div class="flex-grow-1 min-width-0">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6 class="mb-1 text-truncate fw-semibold">
-                                    ${customer.name || 'Unknown Customer'}
-                                    ${isNew ? '<span class="badge bg-success ms-1" style="font-size: 0.6em;">NEW</span>' : ''}
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="mb-1 fw-semibold text-truncate">
+                                    ${customer.name || 'Customer'}
+                                    ${isNew ? '<span class="badge bg-success ms-1" style="font-size:.55em;">NEW</span>' : ''}
                                 </h6>
-                                <small class="text-muted">${lastMessageTime}</small>
+                                <small class="text-muted">${lastTime}</small>
                             </div>
-                            <p class="mb-1 text-muted small">${customer.phone || 'No phone'}</p>
-                            <p class="mb-0 text-muted small text-truncate">${lastMessageText}</p>
+                            <p class="mb-1 text-muted small text-truncate">${customer.phone || ''}</p>
+                            <p class="mb-0 text-muted small text-truncate">${lastText}</p>
                         </div>
-                    </div>
-                `;
-                
-                customerList.appendChild(customerItem);
-            });
-            
-            console.log('Customer list refreshed successfully');
-            
-            // If there's a currently selected customer, refresh their chat view
-            if (window.currentCustomerId) {
-                const updatedCustomer = customers.find(c => c.customerId === window.currentCustomerId);
-                if (updatedCustomer) {
-                    loadMessages(updatedCustomer);
+                    </div>`;
+                return node;
+            },
+            refreshSelectedCustomer() {
+                if (this.state.currentCustomerId) {
+                    const updated = this.state.customers.find(c => c.customerId === this.state.currentCustomerId);
+                    if (updated) this.loadMessages(updated);
+                } else if (this.state.customers.length > 0) {
+                    const first = this.elements.customerList.querySelector('.customer-item');
+                    if (first) this.selectCustomer(first);
                 }
-            } else if (customers.length > 0) {
-                // Auto-select first customer if none selected
-                const firstCustomerItem = customerList.querySelector('.customer-item');
-                if (firstCustomerItem) {
-                    selectCustomer(firstCustomerItem);
-                }
+            },
+
+            /* UTIL */
+            scrollToBottom() {
+                const el = this.elements.messagesContainer;
+                if (el) el.scrollTop = el.scrollHeight;
+            },
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
-        }
-        
-        // Stop polling when page is hidden/user switches tabs
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                stopMessagePolling();
-            } else {
-                startMessagePolling();
-            }
-        });
-        
-        // Stop polling when user leaves the page
-        window.addEventListener('beforeunload', function() {
-            stopMessagePolling();
-        });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => MessagesApp.init());
+
+        // Global compatibility aliases
+        window.selectCustomer = el => MessagesApp.selectCustomer(el);
+        window.sendMessage = () => MessagesApp.sendMessage();
+        window.filterCustomers = () => MessagesApp.filterCustomers();
+        window.MessagesApp = MessagesApp;
     </script>
 </body>
 </html>
